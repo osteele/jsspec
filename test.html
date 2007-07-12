@@ -1,0 +1,21 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+<title></title>
+<script type="text/javascript" src='src/JSSpec.js'></script>
+<script type="text/javascript">
+// <![CDATA[
+Describe('Validator validates HTML', {
+	'Before': function() {
+		this.v = new Validator();
+	},
+	'Validator should validate <i> into <em> when [[Browser.isGecko || Browser.isWebkit]]': function() {
+		this.v.validateHtml('<i>Hello</i>').shouldEqual('<em>Hello</em>');
+	}
+});
+// ]]>
+</script>
+</head>
+<body></body>
+</html>
