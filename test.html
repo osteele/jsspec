@@ -6,12 +6,10 @@
 <script type="text/javascript" src='src/JSSpec.js'></script>
 <script type="text/javascript">
 // <![CDATA[
-Describe('Validator validates HTML', {
-	'Before': function() {
-		this.v = new Validator();
-	},
-	'Validator should validate <i> into <em> when [[Browser.isGecko || Browser.isWebkit]]': function() {
-		this.v.validateHtml('<i>Hello</i>').shouldEqual('<em>Hello</em>');
+Describe('Simple Arithmatic', {
+	'1 plus 1 should be a 2': function() {
+		(1+1).shouldBe(2);
+		(1+2).shouldBe(2);
 	}
 });
 // ]]>

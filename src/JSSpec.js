@@ -13,6 +13,11 @@ JSSpec.Behavior = function(context, entries) {
 	this.context = context;
 	this.examples = entries;
 };
+JSSpec.Behavior.prototype.run = function() {
+	for(var name in this.examples) {
+		this.examples[name]();
+	}
+}
 
 
 
@@ -21,7 +26,22 @@ JSSpec.Runner = function(behaviors, logger) {
 	this.logger = logger;
 };
 
+JSSpec.Runner.prototype.pass = function() {
+	document.title += "."
+}
+
+JSSpec.Runner.prototype.fail = function(expected, actual) {
+	document.title += "F"
+}
+
+JSSpec.Runner.prototype.error = function(e) {
+	document.title += "E"
+}
+
 JSSpec.Runner.prototype.run = function() {
+	for(var i = 0; i < this.behaviors.length; i++) {
+		this.behaviors[i].run();
+	}
 };
 
 
