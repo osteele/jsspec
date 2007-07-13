@@ -5,11 +5,10 @@
 <script type="text/javascript">
 // <![CDATA[
 window.onload = function() {
-	
-	try {
-		x();
-	} catch(e) {
-		throw e;
+//	try {
+		"".should.be("");
+//	} catch(e) {
+//		throw e;
 /*
 		for(var k in e) {
 			alert(k + ":" + e[k]);
@@ -18,18 +17,21 @@ window.onload = function() {
 		// Presto: parse e.message 
 		// Gecko: e.message, e.lineNumber, e.fileName
 		// Webkit: e.message, e.line, e.sourceUrl
-	}
+//	}
 }
 window.onerror = function(e, fileName, lineNumber) {
+	alert(e)
 	// Trident
-	
+	for(var k in e) {
+		alert(k + " : " + e[k]);
+	}
 	return true; // this cancels error
 }
 // ]]>
 </script>
 <style type="text/css">
 </style>
-<title>JSSpec</title>
+<title>Demo</title>
 </head>
 <body>
 </body>

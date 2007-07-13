@@ -15,10 +15,13 @@ JSSpec.Behavior = function(context, entries) {
 };
 JSSpec.Behavior.prototype.run = function() {
 	for(var name in this.examples) {
+		JSSpec.Behavior._pass = 1;
+		this.examples[name]();
+
+		JSSpec.Behavior._pass = 2;
 		this.examples[name]();
 	}
 }
-
 
 
 JSSpec.Runner = function(behaviors, logger) {
@@ -39,11 +42,22 @@ JSSpec.Runner.prototype.error = function(e) {
 }
 
 JSSpec.Runner.prototype.run = function() {
+	this.addBddMethods();
+	
 	for(var i = 0; i < this.behaviors.length; i++) {
 		this.behaviors[i].run();
 	}
 };
 
+JSSpec.Runner.prototype.addBddMethods = function() {
+	String.prototype.should = function(expected) {
+		if(JSSpec.Behavior._pass == 1) {
+			
+		} else {
+			
+		}
+	};
+}
 
 
 JSSpec.Logger = function() {
