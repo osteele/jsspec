@@ -52,6 +52,9 @@ JSSpec.Example = function(name, fn) {
 	this.pass = 1;
 }
 
+JSSpec.Example.prototype.fail = function(expected, actual) {
+	alert(["fail", expected, actual]);
+}
 JSSpec.Example.prototype.error = function(message, sourceUrl, lineNumber) {
 	alert([message, sourceUrl, lineNumber]);
 }
@@ -70,6 +73,8 @@ JSSpec.Example.prototype.parsePrestoException = function(ex) {
 }
 
 JSSpec.Example.prototype.run = function() {
+	this.addBddMethods();
+	
 	if(JSSpec.Browser.Trident) {
 		// In IE, exception should be handled at onerror handler.
 		// It is the only known way to get a valid line number.
@@ -85,6 +90,14 @@ JSSpec.Example.prototype.run = function() {
 	}
 }
 
+JSSpec.Example.prototype.addBddMethods = function() {
+	var self = this;
+	String.prototype.should = {
+		be: function(expected) {
+			if(this != expected) self.fail(expected, this);
+		}
+	}
+}
 
 
 function main() {
