@@ -3,14 +3,134 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
 <title></title>
-<script type="text/javascript" src='src/JSSpec.js'></script>
+<script type="text/javascript" src='lib/prototype.js'></script>
+<!-- script type="text/javascript" src='src/JSSpec.js'></script -->
 <script type="text/javascript">
 // <![CDATA[
-describe('Simple Arithmatic', {
-	'1 plus 1 should be 2': function() {
-		"A".toLowerCase().should_be("a");
+String.prototype.should = function() {
+	var self = this;
+	var secondPass = !!JSSpec.currentExample.failure;
+	
+	return secondPass ?
+		{} :
+		{
+			be: function(expected) {
+				if(self == expected) return;
+				JSSpec.currentExample.failure = {
+					expected:expected,
+					actual:self,
+					message: "Expected [" + expected + "] but [" + self + "]"
+				};
+				throw "AssertionFailure";
+		}
 	}
+}
+
+
+
+////////////////////////////
+function test() {
+//	x.x;
+	"A".toLowerCase().should().be("b");
+}
+
+JSSpec = {}
+
+JSSpec.currentExample = null;
+
+JSSpec.Browser = {
+	Trident: navigator.appName == "Microsoft Internet Explorer",
+	Webkit: navigator.userAgent.indexOf('AppleWebKit/') > -1,
+	Gecko: navigator.userAgent.indexOf('Gecko') > -1 && navigator.userAgent.indexOf('KHTML') == -1,
+	Presto: navigator.appName == "Opera"
+}
+
+JSSpec.Example = function(name, fn) {
+	this.name = name;
+	this.fn = fn;
+}
+JSSpec.Example.prototype.run = function() {
+	JSSpec.currentExample = this;
+	
+	if(JSSpec.Browser.Trident) {
+		// First pass
+		this.fn();
+	} else {
+		// First pass
+		try {
+			this.fn();
+			return;
+		} catch(ex) {
+			if(ex != "AssertionFailure") {
+				this.recordError(ex.message, ex.fileName, ex.lineNumber);
+				this.finished();
+				return;
+			}
+		}
+
+		// Second pass
+		try {
+			this.fn();
+		} catch(ex) {
+			this.recordFailure(ex.fileName, ex.lineNumber);
+		}
+	}
+}
+
+JSSpec.Example.prototype.recordError = function(message, fileName, lineNumber) {
+	this.error = {};
+	this.error.message = message;
+	this.error.fileName = fileName;
+	this.error.lineNumber = lineNumber;
+}
+
+JSSpec.Example.prototype.recordFailure = function(fileName, lineNumber) {
+	this.failure.fileName = fileName;
+	this.failure.lineNumber = lineNumber;
+}
+
+JSSpec.Example.prototype.finished = function() {
+	if(this.failure) {
+		document.title = "Failed: " + [this.failure.message, this.failure.lineNumber];
+	} else if(this.error) {
+		document.title = "Error: " + [this.error.message, this.error.lineNumber];
+	} else {
+		document.title = "Passed";
+	}
+}
+
+if(JSSpec.Browser.Trident) {
+	window.onerror = function(ex, sourceUrl, lineNumber) {
+		var example = JSSpec.currentExample;
+		
+		if(example.failure) {
+			example.recordFailure(sourceUrl, lineNumber);
+		} else if(ex != "AssertionFailure") {
+			example.recordError(ex.toString(), sourceUrl, lineNumber);
+		} else {
+			// Second pass
+			example.fn();
+		}
+
+		return true;
+	}
+}
+
+var ex = new JSSpec.Example("Example", test);
+ex.run();
+// ]]>
+</script>
+<script type="text/javascript">
+// <![CDATA[
+/*
+describe('Simple Arithmatic', {
+	'example 1': function() {
+		"A".toLowerCase().should().be("a");
+		"1".toLowerCase().should().be("2");
+		"B".toLowerCase().should().be("b");
+	},
 });
+*/
 // ]]>
 </script>
 </head>

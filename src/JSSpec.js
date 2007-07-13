@@ -19,6 +19,24 @@ describe = function(context, entries) {
 
 
 /**
+ * Runner
+ */
+JSSpec.Runner = function() {
+	this.behavoirs = JSSpec.behaviors;
+}
+JSSpec.Runner.prototype.run = function(bindex, eindex) {
+	bindex = bindex || 0;
+	eindex = eindex || 0;
+	
+	for(var i = bindex; i < JSSpec.behaviors.length; i++) {
+		JSSpec.bindex = i;
+		JSSpec.behaviors[i].run(i == bindex ? eindex : 0);
+	}
+}
+
+
+
+/**
  * Behavior contains its own context and examples.
  */
 JSSpec.Behavior = function(context, entries) {
@@ -35,8 +53,10 @@ JSSpec.Behavior.prototype.generateExamplesFromEntries = function(entries) {
 	return examples;
 };
 
-JSSpec.Behavior.prototype.run = function() {
-	for(var i = 0; i < this.examples.length; i++) {
+JSSpec.Behavior.prototype.run = function(eindex) {
+	eindex = eindex || 0;
+	for(var i = eindex; i < this.examples.length; i++) {
+		JSSpec.eindex = i;
 		this.examples[i].run();
 	}
 }
@@ -49,14 +69,18 @@ JSSpec.Behavior.prototype.run = function() {
 JSSpec.Example = function(name, fn) {
 	this.name = name;
 	this.fn = fn;
-	this.pass = 1;
+	
+	this.secondPass = false;
+	this.assertionIndex = 0;
+	this.failure = null;
+	this.exception = null;
 }
 
-JSSpec.Example.prototype.fail = function(expected, actual) {
-	alert(["fail", expected, actual]);
+JSSpec.Example.prototype.recordFail = function(index, expected, actual) {
+	this.failure = {index:index, expected:expected, actual:actual};
 }
-JSSpec.Example.prototype.error = function(message, sourceUrl, lineNumber) {
-	alert([message, sourceUrl, lineNumber]);
+JSSpec.Example.prototype.recordException = function(message, sourceUrl, lineNumber) {
+	this.exception = {message:message, sourceUrl:sourceUrl, lineNumber:lineNumber};
 }
 
 JSSpec.Example.prototype.parsePrestoException = function(ex) {
@@ -74,7 +98,13 @@ JSSpec.Example.prototype.parsePrestoException = function(ex) {
 
 JSSpec.Example.prototype.run = function() {
 	this.addBddMethods();
+
+	// First pass
+	this.fn();
+	if(!this.failure) return;
 	
+	// Second pass to figure out exception info such as line number.
+	this.secondPass = true;
 	if(JSSpec.Browser.Trident) {
 		// In IE, exception should be handled at onerror handler.
 		// It is the only known way to get a valid line number.
@@ -85,9 +115,11 @@ JSSpec.Example.prototype.run = function() {
 			this.fn();
 		} catch(ex) {
 			if(JSSpec.Browser.Presto) ex = this.parsePrestoException(ex);
-			this.error(ex.message, ex.fileName, ex.lineNumber);
+			this.recordException(ex.message, ex.fileName, ex.lineNumber);
 		}
 	}
+	
+	console.log(this);
 }
 
 JSSpec.Example.prototype.addBddMethods = function() {
@@ -95,23 +127,33 @@ JSSpec.Example.prototype.addBddMethods = function() {
 	var targets = [String.prototype, Date.prototype, Number.prototype, Array.prototype];
 	
 	for(var i = 0; i < targets.length; i++) {
-		targets[i].should_be = function(expected) {if(this != expected) self.fail(expected, this)}
+		targets[i].should = function() {
+			if(self.secondPass && self.failure.index == self.assertionIndex) return {};
+			
+			return {
+				be: function(expected) {
+					if(this != expected) self.recordFail(self.assertionIndex, expected, this);
+					self.assertionIndex++;
+				}.bind(this)
+			}
+		}
 	}
 }
+
 
 
 function main() {
 	if(JSSpec.Browser.Trident) {
 		window.onerror = function(ex, sourceUrl, lineNumber) {
-			JSSpec.currentExample.error(ex, sourceUrl, lineNumber);
+			JSSpec.currentExample.recordException(ex, sourceUrl, lineNumber);
+			JSSpec.runner.run(JSSpec.bindex, JSSpec.eindex + 1);
 			return true;
 		}
 	}
 	
 	window.onload = function() {
-		for(var i = 0; i < JSSpec.behaviors.length; i++) {
-			JSSpec.behaviors[i].run();
-		}
+		JSSpec.runner = new JSSpec.Runner();
+		JSSpec.runner.run();
 	}
 }
 
