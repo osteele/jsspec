@@ -92,9 +92,11 @@ JSSpec.Example.prototype.run = function() {
 
 JSSpec.Example.prototype.addBddMethods = function() {
 	var self = this;
-	String.prototype.should = {
-		be: function(expected) {
-			if(this != expected) self.fail(expected, this);
+	String.prototype.should = function() {
+		return {
+			be: function(expected) {
+				if(this != expected) self.fail(expected, this);
+			}.bind(this)
 		}
 	}
 }
