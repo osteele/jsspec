@@ -5,31 +5,22 @@
 <title></title>
 <script type="text/javascript" src='lib/prototype.js'></script>
 <script type="text/javascript" src='src/JSSpec.js'></script>
-<script type="text/javascript">
-// <![CDATA[
-describe('Context 1', {
-	'example 1': function() {
-		"A".toLowerCase().should().be("a");
-		"1".toLowerCase().should().be("2");
-		"B".toLowerCase().should().be("b");
+<script type="text/javascript">// <![CDATA[
+describe('Validator translates style tags into semantic tags', {
+	'before all': function() {
+		document.title += " ba";
 	},
-	'example 2': function() {
-		"A".toLowerCase().should().be("a");
+	'ex1': function() {
+		document.title += " e1";
+	},
+	'ex2': function() {
+		document.title += " e2";
+	},
+	'after all': function() {
+		document.title += " aa";
 	}
 });
-
-describe('Context 2', {
-	'example 3': function() {
-		"A".toLowerCase().should().be("a");
-		"1".toLowerCase().should().be("2");
-		"B".toLowerCase().should().be("b");
-	},
-	'example 4': function() {
-		"A".toLowerCase().should().be("a");
-	}
-});
-// ]]>
-</script>
+// ]]></script>
 </head>
 <body></body>
 </html>
