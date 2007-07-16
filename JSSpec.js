@@ -155,6 +155,7 @@ JSSpec.Spec = function(context, entries) {
 	this.id = JSSpec.Spec.id++;
 	this.context = context;
 	
+	this.filterEntriesByEmbeddedExpressions(entries);
 	this.extractOutSpecialEntries(entries);
 	this.examples = this.makeExamplesFromEntries(entries);
 }
@@ -182,6 +183,16 @@ JSSpec.Spec.prototype.getTotalErrors = function() {
 	return errors;
 }
 
+JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
+	var isTrue;
+	for(name in entries) {
+		var m = name.match(/\[\[([^]]+)\]\]/);
+		if(m && m[1]) {
+			eval("isTrue = (" + m[1] + ")");
+			if(!isTrue) delete entries[name];
+		}
+	}
+}
 JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.beforeEach = function() {};
 	this.beforeAll = function() {};
@@ -395,13 +406,14 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 		p.appendChild(document.createElement("BR"))
 		p.appendChild(document.createTextNode(example.exception.message));
 		p.appendChild(document.createElement("BR"))
+		p.appendChild(document.createElement("BR"))
 		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ":" + example.exception.lineNumber));
 		li.appendChild(p);
 	}
-
+	
 	var summary = document.getElementById("summary");
 	var runner = JSSpec.runner;
-
+	
 	summary.className = runner.hasException() ? "exception" : "success";
 	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
 	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
@@ -438,7 +450,10 @@ JSSpec.DSL.assertion = {
 
 describe = JSSpec.DSL.describe;
 
-String.prototype.should = JSSpec.DSL.assertion.should;
+var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype];
+for(var i = 0; i < targets.length; i++) {
+	targets[i].should = JSSpec.DSL.assertion.should;
+}
 
 
 
