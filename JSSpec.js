@@ -158,6 +158,13 @@ JSSpec.Spec.id = 0;
 JSSpec.Spec.prototype.getExamples = function() {
 	return this.examples;
 }
+JSSpec.Spec.prototype.hasException = function() {
+	if(this.exception) return true;
+	
+	for(var i = 0; i < this.examples.length; i++) {
+		if(this.examples[i].exception) return true;
+	}
+}
 JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.beforeEach = function() {};
 	this.beforeAll = function() {};
@@ -256,6 +263,26 @@ JSSpec.Runner = function(specs, logger) {
 JSSpec.Runner.prototype.getSpecs = function() {
 	return this.specs;
 }
+JSSpec.Runner.prototype.hasException = function() {
+	return this.getTotalFailures() > 0 || this.getTotalErrors() > 0;
+}
+JSSpec.Runner.prototype.getTotalFailures = function() {
+	var specs = this.specs;
+	var failure = 0;
+	for(var i = 0; i < specs.length; i++) {
+		if(specs[i].hasException()) failure++;
+	}
+	return failure;
+}
+JSSpec.Runner.prototype.getTotalErrors = function() {
+	var specs = this.specs;
+	var failure = 0;
+	for(var i = 0; i < specs.length; i++) {
+		if(specs[i].hasException()) failure++;
+	}
+	return failure;
+}
+
 JSSpec.Runner.prototype.run = function() {
 	JSSpec.log.onRunnerStart();
 	var executor = new JSSpec.CompositeExecutor(function() {JSSpec.log.onRunnerEnd()},null,true);
@@ -274,7 +301,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	var summary = document.createElement("H1");
 	summary.id = "summary";
 	summary.className = "ongoing";
-	summary.innerHTML = 'JSSpec results - <span id="total_specs">0</span> specs / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors';
+	summary.innerHTML = 'JSSpec results <span style="font-size:0.75em;">(<span id="total_specs">0</span> specs / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors)</span>';
 	document.body.appendChild(summary);
 	
 	var specs = JSSpec.runner.getSpecs();
@@ -288,6 +315,8 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		document.body.appendChild(div);
 		
 		var heading = document.createElement("H2");
+		heading.id = "spec_heading_" + spec.id;
+		heading.className = "waiting";
 		heading.appendChild(document.createTextNode(spec.context));
 		div.appendChild(heading);
 		
@@ -310,16 +339,26 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
 	var summary = document.getElementById("summary");
-	// TODO
-	summary.className = "success";
+	var runner = JSSpec.runner;
+
+	summary.className = runner.hasException() ? "exception" : "success";
+	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
+	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
+	
 }
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
 	var div = document.getElementById("spec_" + spec.id);
 	div.className = "ongoing";
+	
+	var heading = document.getElementById("spec_heading_" + spec.id);
+	heading.className = "ongoing";
 }
 JSSpec.Logger.prototype.onSpecEnd = function(spec) {
 	var div = document.getElementById("spec_" + spec.id);
 	div.className = spec.exception ? "exception" : "success";
+
+	var heading = document.getElementById("spec_heading_" + spec.id);
+	heading.className = spec.hasException() ? "exception" : "success";
 }
 JSSpec.Logger.prototype.onExampleStart = function(example) {
 	var li = document.getElementById("example_" + example.id);

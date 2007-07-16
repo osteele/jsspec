@@ -1,21 +1,62 @@
 @CHARSET "UTF-8";
 
-body, h1, h2, div, ul, li, p {
+* {
 	padding: 0;
 	margin: 0;
+	font-family: "Lucida Grande", Helvetica, sans-serif;
 }
 
-.waiting {
-	background-color: #F0F0F0;
+h1, h2, li {
+	font-size: 2em;
+	padding: 0.2em;
+	border-style: solid;
+	border-top-width: 1px;
+	border-bottom-width: 1px;
 }
-.ongoing {
+
+div {
+	padding: 0.5em 1em;
+}
+	
+li {
+	margin: 0.1em 1em;
+	padding-left: 1em;
+	list-style: none;
+}
+
+h2, li {
+	border-left-style: solid;
+	border-left-width: 5px;
+	font-size: 0.75em;
+}
+
+
+
+h1.waiting, h2.waiting, li.waiting {
 	background-color: #FFFFC0;
 }
-.success {
-	color: #3d7700;
-	background-color: #DBFFB4;
+h1.ongoing, h2.ongoing, li.ongoing {
+	background-color: #FFFFC0;
 }
-.exception {
+
+h1.success, h2.success {
+	color: #FFFFFF;
+	background-color: #65C400;
+	border-color: #65C400;
+}
+li.success {
+	color: #3D7700;
+	background-color: #DBFFB4;
+	border-color: #65C400;
+}
+
+h1.exception, h2.exception {
+	color: #FFFFFF;
+	background-color: #C20000;
+	border-color: #C20000;
+}
+li.exception {
 	color: #C20000;
 	background-color: #FFFBD3;
+	border-color: #C20000;
 }
