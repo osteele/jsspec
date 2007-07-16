@@ -1,12 +1,11 @@
-var JSSpec = {
-	behaviors: [],
-	
-	example: null,
-	behavior: null,
-	runner: null,
-	logger: null
+// defining namespace
+JSSpec = {
+	specs: []
 }
 
+
+
+// Browser detection code
 JSSpec.Browser = {
 	Trident: navigator.appName == "Microsoft Internet Explorer",
 	Webkit: navigator.userAgent.indexOf('AppleWebKit/') > -1,
@@ -14,83 +13,153 @@ JSSpec.Browser = {
 	Presto: navigator.appName == "Opera"
 }
 
-describe = function(context, entries) {
-	JSSpec.behaviors.push(new JSSpec.Behavior(context, entries));
-}
 
 
-
-/**
- * Example
- */
-JSSpec.Example = function(name, fn) {
-	this.name = name;
-	this.fn = fn;
-}
-
-JSSpec.Example.prototype.run = function() {
-	JSSpec.example = this;
-	JSSpec.logger.startExample(this);
+// Cross-platform exception handler. It helps to collect exact line number where exception occured.
+JSSpec.Executor = function(target, onSuccess, onException) {
+	this.target = target;
+	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : function() {};
+	this.onException = typeof onException == 'function' ? onException : function() {};
 	
 	if(JSSpec.Browser.Trident) {
-		// First pass
-		this.fn();
-		this.finished();
-	} else {
-		// First pass
-		try {
-			this.fn();
-			this.finished();
-			return;
-		} catch(ex) {
-			if(ex != "AssertionFailure") {
-				this.recordError(ex.message, ex.fileName, ex.lineNumber);
-				this.finished();
-				return;
+		window.onerror = function(message, fileName, lineNumber) {
+			var self = window._curExecutor;
+			var ex = {message:message, fileName:fileName, lineNumber:lineNumber};
+
+			if(JSSpec._secondPass)  {
+				ex = self.mergeExceptions(JSSpec._assertionFailure, ex);
+				delete JSSpec._secondPass;
+				delete JSSpec._assertionFailure;
+				
+				self.onException(self, ex);
+			} else if(JSSpec._assertionFailure) {
+				JSSpec._secondPass = true;
+				self.run();
+			} else {
+				self.onException(self, ex);
 			}
-		}
-		
-		// Second pass
-		try {
-			this.fn();
-		} catch(ex) {
-			this.recordFailure(ex.fileName, ex.lineNumber);
-			this.finished();
-			return;
+			
+			return true;
 		}
 	}
 }
-
-JSSpec.Example.prototype.recordError = function(message, fileName, lineNumber) {
-	this.error = {};
-	this.error.message = message;
-	this.error.fileName = fileName;
-	this.error.lineNumber = lineNumber;
-}
+JSSpec.Executor.prototype.mergeExceptions = function(assertionFailure, normalException) {
+	var merged = {
+		message:assertionFailure.message,
+		fileName:normalException.fileName,
+		lineNumber:normalException.lineNumber,
+		expected:assertionFailure.expected,
+		actual:assertionFailure.actual
+	};
 	
-JSSpec.Example.prototype.recordFailure = function(fileName, lineNumber) {
-	this.failure.fileName = fileName;
-	this.failure.lineNumber = lineNumber;
+	return merged;
 }
+JSSpec.Executor.prototype.run = function() {
+	var self = this;
+	var target = this.target;
+	var onSuccess = this.onSuccess;
+	var onException = this.onException;
 	
-JSSpec.Example.prototype.finished = function() {
-	JSSpec.logger.endExample(this);
-	window.setTimeout(JSSpec.behavior.run.bind(JSSpec.behavior));
+	window.setTimeout(
+		function() {
+			if(JSSpec.Browser.Trident) {
+				window._curExecutor = self;
+				
+				var result = self.target();
+				self.onSuccess(self, result);
+			} else {
+				try {
+					var result = self.target();
+					self.onSuccess(self, result);
+				} catch(ex) {
+					if(JSSpec.Browser.Webkit) ex = {message:ex.message, fileName:ex.sourceUrl, lineNumber:ex.line}
+					
+					if(JSSpec._secondPass)  {
+						ex = self.mergeExceptions(JSSpec._assertionFailure, ex);
+						delete JSSpec._secondPass;
+						delete JSSpec._assertionFailure;
+						
+						self.onException(self, ex);
+					} else if(JSSpec._assertionFailure) {
+						JSSpec._secondPass = true;
+						self.run();
+					} else {
+						self.onException(self, ex);
+					}
+				}
+			}
+		},
+		0
+	);
 }
 
 
 
-/**
- * Behavior
- */
-JSSpec.Behavior = function(context, entries) {
+// CompositeExecutor composites one or more executors and execute them sequencially.
+JSSpec.CompositeExecutor = function(onSuccess, onException, continueOnException) {
+	this.queue = [];
+	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : function() {};
+	this.onException = typeof onException == 'function' ? onException : function() {};
+	this.continueOnException = !!continueOnException;
+}
+JSSpec.CompositeExecutor.prototype.addFunction = function(func) {
+	this.addExecutor(new JSSpec.Executor(func));
+}
+JSSpec.CompositeExecutor.prototype.addExecutor = function(executor) {
+	var last = this.queue.length == 0 ? null : this.queue[this.queue.length - 1];
+	if(last) {
+		last.next = executor;
+	}
+	
+	executor.parent = this;
+	executor.onSuccessBackup = executor.onSuccess;
+	executor.onSuccess = function(result) {
+		this.onSuccessBackup(result);
+		if(this.next) {
+			this.next.run()
+		} else {
+			this.parent.onSuccess();
+		}
+	}
+
+	executor.onExceptionBackup = executor.onException;
+	executor.onException = function(executor, ex) {
+		this.onExceptionBackup(executor, ex);
+
+		if(this.parent.continueOnException) {
+			if(this.next) {
+				this.next.run()
+			} else {
+				this.parent.onSuccess();
+			}
+		} else {
+			this.parent.onException(executor, ex);
+		}
+	}
+
+	this.queue.push(executor);
+}
+JSSpec.CompositeExecutor.prototype.run = function() {
+	if(this.queue.length > 0) {
+		this.queue[0].run();
+	}
+}
+
+
+
+// Spec is a set of Examples in a specific context
+JSSpec.Spec = function(context, entries) {
 	this.context = context;
+	
 	this.extractOutSpecialEntries(entries);
-	this.examples = this.makeExamples(entries);
-	this.index = 0;
+	this.examples = this.makeExamplesFromEntries(entries);
 }
-
-JSSpec.Behavior.prototype.extractOutSpecialEntries = function(entries) {
+JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
+	this.beforeEach = function() {};
+	this.beforeAll = function() {};
+	this.afterEach = function() {};
+	this.afterAll = function() {};
+	
 	for(name in entries) {
 		if(name == 'before' || name == 'before each') {
 			this.beforeEach = entries[name];
@@ -110,160 +179,88 @@ JSSpec.Behavior.prototype.extractOutSpecialEntries = function(entries) {
 	delete entries['after each'];
 	delete entries['after all'];
 }
-
-JSSpec.Behavior.prototype.makeExamples = function(entries) {
+JSSpec.Spec.prototype.makeExamplesFromEntries = function(entries) {
 	var examples = [];
 	for(name in entries) {
-		examples.push(new JSSpec.Example(name, entries[name]));
+		examples.push(new JSSpec.Example(name, entries[name], this.beforeEach, this.afterEach));
 	}
 	return examples;
 }
+JSSpec.Spec.prototype.getExecutor = function() {
+	var onException = function(executor, ex) {document.title += '{' + ex.lineNumber + "," + ex.message + '}'};
 
-JSSpec.Behavior.prototype.run = function() {
-	JSSpec.behavior = this;
+	var composite = new JSSpec.CompositeExecutor();
+	composite.addExecutor(new JSSpec.Executor(this.beforeAll, null, onException));
 	
-	var example = this.examples[this.index];
-	
-	if(this.index == 0) {
-		JSSpec.logger.startBehavior(this);
-		if(this.beforeAll) {
-			this.beforeAll();
-		}
-		window.setTimeout(example.run.bind(example));
-	} else if(this.index >= this.examples.length) {
-		JSSpec.logger.endBehavior(this);
-		if(this.afterAll) {
-			this.afterAll();
-		}
-		window.setTimeout(JSSpec.runner.run.bind(JSSpec.runner));
-	} else {
-		window.setTimeout(example.run.bind(example));
+	var exampleAndAfter = new JSSpec.CompositeExecutor(null,null,true);
+	for(var i = 0; i < this.examples.length; i++) {
+		exampleAndAfter.addExecutor(this.examples[i].getExecutor());
 	}
+	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll, null, onException));
+	composite.addExecutor(exampleAndAfter);
+	return composite;
+}
+
+
+
+
+// Example
+JSSpec.Example = function(name, target, before, after) {
+	this.name = name;
+	this.target = target;
+	this.before = before;
+	this.after = after;
+}
+JSSpec.Example.prototype.getExecutor = function() {
+	var onException = function(executor, ex) {document.title += '{' + ex.lineNumber + "," + ex.message + '}'};
 	
-	this.index++;
-}
-
-
-
-/**
- * Runner
- */
-JSSpec.Runner = function() {
-	this.behaviors = JSSpec.behaviors;
-	this.index = 0;
-}
-
-JSSpec.Runner.prototype.run = function() {
-	JSSpec.runner = this;
-
-	var behavior = this.behaviors[this.index];
+	var composite = new JSSpec.CompositeExecutor();
+	composite.addExecutor(new JSSpec.Executor(this.before, null, onException));
 	
-	if(this.index == 0) {
-		JSSpec.logger.startRunner(this);
-		window.setTimeout(behavior.run.bind(behavior), 0);
-	} else if(this.index >= this.behaviors.length) {
-		JSSpec.logger.endRunner(this);
-	} else {
-		window.setTimeout(behavior.run.bind(behavior), 0);
-	}
+	var targetAndAfter = new JSSpec.CompositeExecutor(null,null,true);
+
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.target, null, onException));
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.after, null, onException));
 	
-	this.index++;
+	composite.addExecutor(targetAndAfter);
+
+	return composite;
 }
 
 
 
-/**
- * Logger
- */
-JSSpec.Logger = function() {
-	this.summary = null;
-	this.log = null;
+// Domain Specific Languages
+JSSpec.DSL = {};
+JSSpec.DSL.describe = function(context, entries) {
+	JSSpec.specs.push(new JSSpec.Spec(context, entries));
 }
-JSSpec.Logger.prototype.startRunner = function(runner) {
-	this.summary = document.createElement("DIV");
-	document.body.appendChild(this.summary);
-
-	this.log = document.createElement("DIV");
-	document.body.appendChild(this.log);
-}
-JSSpec.Logger.prototype.startBehavior = function(behavior) {
-	var heading = document.createElement("H2");
-	this.log.appendChild(heading);
-	heading.appendChild(document.createTextNode(behavior.context));
-	
-	var ul = document.createElement("UL");
-	this.log.appendChild(ul);
-}
-JSSpec.Logger.prototype.startExample = function(example) {
-}
-JSSpec.Logger.prototype.endExample = function(example) {
-	var ul = this.log.lastChild;
-	var li = document.createElement("LI");
-	ul.appendChild(li);
-	li.appendChild(document.createTextNode(example.name));
-	
-	var message
-	if(example.error) li.innerHTML += (" / " + example.error.message + " / line " + example.error.lineNumber);
-	if(example.failure) li.innerHTML += (" / " + example.failure.message + " / line " + example.failure.lineNumber);
-}
-JSSpec.Logger.prototype.endBehavior = function(behavior) {
-	
-}
-JSSpec.Logger.prototype.endRunner = function(runner) {
-	
-}
-
-
-
-/**
- * BDD Extentions
- */
-String.prototype.should = function() {
-	var self = this;
-	var secondPass = !!JSSpec.example.failure;
-	
-	return secondPass ?
-		{} :
-		{
+JSSpec.DSL.assertion = {
+	should:function() {
+		if(JSSpec._secondPass) return {}
+		
+		var self = this;
+		return {
 			be: function(expected) {
-				if(self == expected) return;
-				JSSpec.example.failure = {
-					expected:expected,
-					actual:self,
-					message: "Expected [" + expected + "] but [" + self + "]"
-				};
-				
-				if(JSSpec.Browser.Trident) JSSpec.example.firstPass = true;
-				throw "AssertionFailure";
+				if(self != expected) {
+					JSSpec._assertionFailure = {message:"AssertionFailure", expected:expected, actual:self};
+					throw JSSpec._assertionFailure;
+				}
 			}
 		}
-}
-
-
-
-if(JSSpec.Browser.Trident) {
-	window.onerror = function(ex, sourceUrl, lineNumber) {
-		var example = JSSpec.example;
-
-		if(ex == "AssertionFailure" || example.firstPass) {
-			// Second pass
-			delete example.firstPass;
-			window.setTimeout(example.fn, 0);
-		} else if(example.failure) {
-			example.recordFailure(sourceUrl, lineNumber);
-			example.finished();
-		} else {
-			example.recordError(ex.toString(), sourceUrl, lineNumber);
-			example.finished();
-		}
-		
-		return true;
 	}
 }
 
+describe = JSSpec.DSL.describe;
+
+String.prototype.should = JSSpec.DSL.assertion.should;
+
+
+
+// Main
 window.onload = function() {
-	JSSpec.logger = new JSSpec.Logger();
-	JSSpec.runner = new JSSpec.Runner();
-	
-	window.setTimeout(JSSpec.runner.run.bind(JSSpec.runner));
+	var runner = new JSSpec.CompositeExecutor(null,null,true);
+	for(var i = 0; i < JSSpec.specs.length; i++) {
+		runner.addExecutor(JSSpec.specs[i].getExecutor());
+	}
+	runner.run();
 }
