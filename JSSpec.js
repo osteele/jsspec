@@ -74,7 +74,7 @@ JSSpec.Executor.prototype.run = function() {
 					var result = self.target();
 					self.onSuccess(self, result);
 				} catch(ex) {
-					if(JSSpec.Browser.Webkit) ex = {message:ex.message, fileName:ex.sourceUrl, lineNumber:ex.line}
+					if(JSSpec.Browser.Webkit) ex = {message:ex.message, fileName:ex.sourceURL, lineNumber:ex.line}
 					
 					if(JSSpec._secondPass)  {
 						ex = self.mergeExceptions(JSSpec._assertionFailure, ex);
