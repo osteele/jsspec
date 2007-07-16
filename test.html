@@ -10,13 +10,45 @@ describe('Spec 1', {
 		"a".should().be("a");
 	},
 	'Example 2': function() {
-		"a".should().be("b");
+		x.y();
 	},
 	'Example 3': function() {
+		"a".should().be("b");
+	}
+})
+describe('Spec 2', {
+	'Example 4': function() {
+		"a".should().be("a");
+	},
+	'Example 5': function() {
+		"a".should().be("b");
+	},
+	'Example 6': function() {
 		x.y();
 	}
 })
 // ]]></script>
 </head>
-<body></body>
+<body>
+<h1>JSSpec results - 3 specs / 2 failures / 0 errors</h1>
+<div>
+	<h2>Spec 1</h2>
+	<ul>
+		<li><p>should 1</p></li>
+		<li><p>should 2</p></li>
+		<li>
+			<p>should 3 but blah blah</p>
+			<p>test.js:18</p>
+		</li>
+	</ul>
+</div>
+<div>
+	<h2>Spec 2</h2>
+	<ul>
+		<li><p>should 1</p></li>
+		<li><p>should 2</p></li>
+		<li><p>should 3</p></li>
+	</ul>
+</div>
+</body>
 </html>

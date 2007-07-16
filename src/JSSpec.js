@@ -15,7 +15,7 @@ JSSpec.Browser = {
 
 
 
-// Cross-platform exception handler. It helps to collect exact line number where exception occured.
+// Exception handler for Trident. It helps to collect exact line number where exception occured.
 JSSpec.Executor = function(target, onSuccess, onException) {
 	this.target = target;
 	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : function() {};
@@ -31,11 +31,17 @@ JSSpec.Executor = function(target, onSuccess, onException) {
 				delete JSSpec._secondPass;
 				delete JSSpec._assertionFailure;
 				
+				if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
+				if(JSSpec._curExample) JSSpec._curExample.exception = ex;
+				
 				self.onException(self, ex);
 			} else if(JSSpec._assertionFailure) {
 				JSSpec._secondPass = true;
 				self.run();
 			} else {
+				if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
+				if(JSSpec._curExample) JSSpec._curExample.exception = ex;
+				
 				self.onException(self, ex);
 			}
 			
@@ -79,11 +85,17 @@ JSSpec.Executor.prototype.run = function() {
 						delete JSSpec._secondPass;
 						delete JSSpec._assertionFailure;
 						
+						if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
+						if(JSSpec._curExample) JSSpec._curExample.exception = ex;
+						
 						self.onException(self, ex);
 					} else if(JSSpec._assertionFailure) {
 						JSSpec._secondPass = true;
 						self.run();
 					} else {
+						if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
+						if(JSSpec._curExample) JSSpec._curExample.exception = ex;
+
 						self.onException(self, ex);
 					}
 				}
@@ -121,7 +133,6 @@ JSSpec.CompositeExecutor.prototype.addExecutor = function(executor) {
 			this.parent.onSuccess();
 		}
 	}
-
 	executor.onExceptionBackup = executor.onException;
 	executor.onException = function(executor, ex) {
 		this.onExceptionBackup(executor, ex);
@@ -187,17 +198,19 @@ JSSpec.Spec.prototype.makeExamplesFromEntries = function(entries) {
 	return examples;
 }
 JSSpec.Spec.prototype.getExecutor = function() {
-	var onException = function(executor, ex) {document.title += '{' + ex.lineNumber + "," + ex.message + '}'};
-
+	var self = this;
 	var composite = new JSSpec.CompositeExecutor();
-	composite.addExecutor(new JSSpec.Executor(this.beforeAll, null, onException));
+	composite.addFunction(function() {JSSpec.log.onSpecStart(self)});
+	composite.addExecutor(new JSSpec.Executor(this.beforeAll));
 	
 	var exampleAndAfter = new JSSpec.CompositeExecutor(null,null,true);
 	for(var i = 0; i < this.examples.length; i++) {
 		exampleAndAfter.addExecutor(this.examples[i].getExecutor());
 	}
-	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll, null, onException));
+	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll));
+	exampleAndAfter.addFunction(function() {JSSpec.log.onSpecEnd(self)});
 	composite.addExecutor(exampleAndAfter);
+	
 	return composite;
 }
 
@@ -212,19 +225,45 @@ JSSpec.Example = function(name, target, before, after) {
 	this.after = after;
 }
 JSSpec.Example.prototype.getExecutor = function() {
-	var onException = function(executor, ex) {document.title += '{' + ex.lineNumber + "," + ex.message + '}'};
-	
+	var self = this;
 	var composite = new JSSpec.CompositeExecutor();
-	composite.addExecutor(new JSSpec.Executor(this.before, null, onException));
+	composite.addFunction(function() {JSSpec.log.onExampleStart(self)});
+	composite.addExecutor(new JSSpec.Executor(this.before, null));
 	
 	var targetAndAfter = new JSSpec.CompositeExecutor(null,null,true);
-
-	targetAndAfter.addExecutor(new JSSpec.Executor(this.target, null, onException));
-	targetAndAfter.addExecutor(new JSSpec.Executor(this.after, null, onException));
+	
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.target));
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.after));
+	targetAndAfter.addFunction(function() {JSSpec.log.onExampleEnd(self)});
 	
 	composite.addExecutor(targetAndAfter);
-
+	
 	return composite;
+}
+
+
+
+// Logger
+JSSpec.Logger = function() {}
+
+JSSpec.Logger.prototype.onRunnerStart = function() {
+
+}
+JSSpec.Logger.prototype.onRunnerEnd = function() {
+
+}
+JSSpec.Logger.prototype.onSpecStart = function(spec) {
+	JSSpec._curSpec = spec;
+}
+JSSpec.Logger.prototype.onSpecEnd = function(spec) {
+
+}
+JSSpec.Logger.prototype.onExampleStart = function(example) {
+	JSSpec._curExample = example;
+
+}
+JSSpec.Logger.prototype.onExampleEnd = function(example) {
+	console.log([example.name, example.exception]);
 }
 
 
@@ -258,7 +297,11 @@ String.prototype.should = JSSpec.DSL.assertion.should;
 
 // Main
 window.onload = function() {
-	var runner = new JSSpec.CompositeExecutor(null,null,true);
+	var log = new JSSpec.Logger();
+	JSSpec.log = log;
+	
+	JSSpec.log.onRunnerStart();
+	var runner = new JSSpec.CompositeExecutor(function() {JSSpec.log.onRunnerEnd()},null,true);
 	for(var i = 0; i < JSSpec.specs.length; i++) {
 		runner.addExecutor(JSSpec.specs[i].getExecutor());
 	}
