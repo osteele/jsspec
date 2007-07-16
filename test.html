@@ -6,6 +6,10 @@
 <script type="text/javascript" src="src/JSSpec.js"></script>
 <script type="text/javascript">// <![CDATA[
 describe('Spec 1', {
+	'before all': function() {
+	},
+	'before': function() {
+	},
 	'Example 1': function() {
 		"a".should().be("a");
 	},
@@ -14,6 +18,8 @@ describe('Spec 1', {
 	},
 	'Example 3': function() {
 		"a".should().be("b");
+	},
+	'after': function() {
 	}
 })
 describe('Spec 2', {
@@ -29,26 +35,5 @@ describe('Spec 2', {
 })
 // ]]></script>
 </head>
-<body>
-<h1>JSSpec results - 3 specs / 2 failures / 0 errors</h1>
-<div>
-	<h2>Spec 1</h2>
-	<ul>
-		<li><p>should 1</p></li>
-		<li><p>should 2</p></li>
-		<li>
-			<p>should 3 but blah blah</p>
-			<p>test.js:18</p>
-		</li>
-	</ul>
-</div>
-<div>
-	<h2>Spec 2</h2>
-	<ul>
-		<li><p>should 1</p></li>
-		<li><p>should 2</p></li>
-		<li><p>should 3</p></li>
-	</ul>
-</div>
-</body>
+<body></body>
 </html>

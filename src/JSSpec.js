@@ -31,17 +31,11 @@ JSSpec.Executor = function(target, onSuccess, onException) {
 				delete JSSpec._secondPass;
 				delete JSSpec._assertionFailure;
 				
-				if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
-				if(JSSpec._curExample) JSSpec._curExample.exception = ex;
-				
 				self.onException(self, ex);
 			} else if(JSSpec._assertionFailure) {
 				JSSpec._secondPass = true;
 				self.run();
 			} else {
-				if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
-				if(JSSpec._curExample) JSSpec._curExample.exception = ex;
-				
 				self.onException(self, ex);
 			}
 			
@@ -85,17 +79,11 @@ JSSpec.Executor.prototype.run = function() {
 						delete JSSpec._secondPass;
 						delete JSSpec._assertionFailure;
 						
-						if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
-						if(JSSpec._curExample) JSSpec._curExample.exception = ex;
-						
 						self.onException(self, ex);
 					} else if(JSSpec._assertionFailure) {
 						JSSpec._secondPass = true;
 						self.run();
 					} else {
-						if(JSSpec._curSpec) JSSpec._curSpec.exception = ex;
-						if(JSSpec._curExample) JSSpec._curExample.exception = ex;
-
 						self.onException(self, ex);
 					}
 				}
@@ -160,10 +148,15 @@ JSSpec.CompositeExecutor.prototype.run = function() {
 
 // Spec is a set of Examples in a specific context
 JSSpec.Spec = function(context, entries) {
+	this.id = JSSpec.Spec.id++;
 	this.context = context;
 	
 	this.extractOutSpecialEntries(entries);
 	this.examples = this.makeExamplesFromEntries(entries);
+}
+JSSpec.Spec.id = 0;
+JSSpec.Spec.prototype.getExamples = function() {
+	return this.examples;
 }
 JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.beforeEach = function() {};
@@ -199,15 +192,20 @@ JSSpec.Spec.prototype.makeExamplesFromEntries = function(entries) {
 }
 JSSpec.Spec.prototype.getExecutor = function() {
 	var self = this;
+	var onException = function(executor, ex) {self.exception = ex}
+	
 	var composite = new JSSpec.CompositeExecutor();
 	composite.addFunction(function() {JSSpec.log.onSpecStart(self)});
-	composite.addExecutor(new JSSpec.Executor(this.beforeAll));
+	composite.addExecutor(new JSSpec.Executor(this.beforeAll, null, function(exec, ex) {
+		self.exception = ex;
+		JSSpec.log.onSpecEnd(self);
+	}));
 	
 	var exampleAndAfter = new JSSpec.CompositeExecutor(null,null,true);
 	for(var i = 0; i < this.examples.length; i++) {
 		exampleAndAfter.addExecutor(this.examples[i].getExecutor());
 	}
-	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll));
+	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll, null, onException));
 	exampleAndAfter.addFunction(function() {JSSpec.log.onSpecEnd(self)});
 	composite.addExecutor(exampleAndAfter);
 	
@@ -219,21 +217,30 @@ JSSpec.Spec.prototype.getExecutor = function() {
 
 // Example
 JSSpec.Example = function(name, target, before, after) {
+	this.id = JSSpec.Example.id++;
 	this.name = name;
 	this.target = target;
 	this.before = before;
 	this.after = after;
 }
+JSSpec.Example.id = 0;
 JSSpec.Example.prototype.getExecutor = function() {
 	var self = this;
+	var onException = function(executor, ex) {
+		self.exception = ex
+	}
+	
 	var composite = new JSSpec.CompositeExecutor();
 	composite.addFunction(function() {JSSpec.log.onExampleStart(self)});
-	composite.addExecutor(new JSSpec.Executor(this.before, null));
+	composite.addExecutor(new JSSpec.Executor(this.before, null, function(exec, ex) {
+		self.exception = ex;
+		JSSpec.log.onExampleEnd(self);
+	}));
 	
 	var targetAndAfter = new JSSpec.CompositeExecutor(null,null,true);
 	
-	targetAndAfter.addExecutor(new JSSpec.Executor(this.target));
-	targetAndAfter.addExecutor(new JSSpec.Executor(this.after));
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.target, null, onException));
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.after, null, onException));
 	targetAndAfter.addFunction(function() {JSSpec.log.onExampleEnd(self)});
 	
 	composite.addExecutor(targetAndAfter);
@@ -242,28 +249,78 @@ JSSpec.Example.prototype.getExecutor = function() {
 }
 
 
+JSSpec.Runner = function(specs, logger) {
+	JSSpec.log = logger;
+	this.specs = specs;
+}
+JSSpec.Runner.prototype.getSpecs = function() {
+	return this.specs;
+}
+JSSpec.Runner.prototype.run = function() {
+	JSSpec.log.onRunnerStart();
+	var executor = new JSSpec.CompositeExecutor(function() {JSSpec.log.onRunnerEnd()},null,true);
+	for(var i = 0; i < this.specs.length; i++) {
+		executor.addExecutor(this.specs[i].getExecutor());
+	}
+	executor.run();
+}
+
+
 
 // Logger
 JSSpec.Logger = function() {}
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
-
+	var summary = document.createElement("H1");
+	summary.innerHTML = 'JSSpec results - <span id="total_specs">0</span> specs / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors';
+	document.body.appendChild(summary);
+	
+	var specs = JSSpec.runner.getSpecs();
+	document.getElementById("total_specs").innerHTML = specs.length;
+	
+	for(var i = 0; i < specs.length; i++) {
+		var spec = specs[i];
+		var div = document.createElement("DIV");
+		div.id = "spec_" + spec.id;
+		document.body.appendChild(div);
+		
+		var heading = document.createElement("H2");
+		heading.appendChild(document.createTextNode(spec.context));
+		div.appendChild(heading);
+		
+		var examples = spec.getExamples();
+		
+		var ul = document.createElement("UL");
+		div.appendChild(ul);
+		
+		for(var j = 0; j < examples.length; j++) {
+			var example = examples[j];
+			var li = document.createElement("LI");
+			li.id = "example_" + example.id;
+			var p = document.createElement("P");
+			p.appendChild(document.createTextNode(example.name));
+			li.appendChild(p);
+			ul.appendChild(li);
+		}
+	}
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
-
 }
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
-	JSSpec._curSpec = spec;
+	var div = document.getElementById("spec_" + spec.id);
+	div.className = "ongoing";
 }
 JSSpec.Logger.prototype.onSpecEnd = function(spec) {
-
+	var div = document.getElementById("spec_" + spec.id);
+	div.className = spec.exception ? "exception" : "success";
 }
 JSSpec.Logger.prototype.onExampleStart = function(example) {
-	JSSpec._curExample = example;
-
+	var li = document.getElementById("example_" + example.id);
+	li.className = "ongoing";
 }
 JSSpec.Logger.prototype.onExampleEnd = function(example) {
-	console.log([example.name, example.exception]);
+	var li = document.getElementById("example_" + example.id);
+	li.className = example.exception ? "exception" : "success";
 }
 
 
@@ -297,13 +354,6 @@ String.prototype.should = JSSpec.DSL.assertion.should;
 
 // Main
 window.onload = function() {
-	var log = new JSSpec.Logger();
-	JSSpec.log = log;
-	
-	JSSpec.log.onRunnerStart();
-	var runner = new JSSpec.CompositeExecutor(function() {JSSpec.log.onRunnerEnd()},null,true);
-	for(var i = 0; i < JSSpec.specs.length; i++) {
-		runner.addExecutor(JSSpec.specs[i].getExecutor());
-	}
-	runner.run();
+	JSSpec.runner = new JSSpec.Runner(JSSpec.specs, new JSSpec.Logger());
+	JSSpec.runner.run();
 }
