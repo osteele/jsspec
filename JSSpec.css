@@ -12,14 +12,15 @@ h1, h2, li {
 	border-style: solid;
 	border-top-width: 1px;
 	border-bottom-width: 1px;
+	border-color: white;
 }
 
 div {
 	padding: 0.5em 1em;
 }
-	
+
 li {
-	margin: 0.1em 1em;
+	margin: 0.2em 1em;
 	padding-left: 1em;
 	list-style: none;
 }
@@ -33,10 +34,12 @@ h2, li {
 
 
 h1.waiting, h2.waiting, li.waiting {
-	background-color: #FFFFC0;
+	background-color: #E0E0E0;
+	border-color: #A0A0A0;
 }
 h1.ongoing, h2.ongoing, li.ongoing {
 	background-color: #FFFFC0;
+	border-color: #259400;
 }
 
 h1.success, h2.success {

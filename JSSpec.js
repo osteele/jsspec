@@ -31,11 +31,13 @@ JSSpec.Executor = function(target, onSuccess, onException) {
 				delete JSSpec._secondPass;
 				delete JSSpec._assertionFailure;
 				
+				ex.type = "failure";
 				self.onException(self, ex);
 			} else if(JSSpec._assertionFailure) {
 				JSSpec._secondPass = true;
 				self.run();
 			} else {
+				ex.type = "error";
 				self.onException(self, ex);
 			}
 			
@@ -79,11 +81,13 @@ JSSpec.Executor.prototype.run = function() {
 						delete JSSpec._secondPass;
 						delete JSSpec._assertionFailure;
 						
+						ex.type = "failure";
 						self.onException(self, ex);
 					} else if(JSSpec._assertionFailure) {
 						JSSpec._secondPass = true;
 						self.run();
 					} else {
+						ex.type = "error";
 						self.onException(self, ex);
 					}
 				}
@@ -159,12 +163,25 @@ JSSpec.Spec.prototype.getExamples = function() {
 	return this.examples;
 }
 JSSpec.Spec.prototype.hasException = function() {
-	if(this.exception) return true;
-	
-	for(var i = 0; i < this.examples.length; i++) {
-		if(this.examples[i].exception) return true;
-	}
+	return this.getTotalFailures() > 0 || this.getTotalErrors() > 0;
 }
+JSSpec.Spec.prototype.getTotalFailures = function() {
+	var examples = this.examples;
+	var failures = 0;
+	for(var i = 0; i < examples.length; i++) {
+		if(examples[i].isFailure()) failures++;
+	}
+	return failures;
+}
+JSSpec.Spec.prototype.getTotalErrors = function() {
+	var examples = this.examples;
+	var errors = 0;
+	for(var i = 0; i < examples.length; i++) {
+		if(examples[i].isError()) errors++;
+	}
+	return errors;
+}
+
 JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.beforeEach = function() {};
 	this.beforeAll = function() {};
@@ -231,6 +248,13 @@ JSSpec.Example = function(name, target, before, after) {
 	this.after = after;
 }
 JSSpec.Example.id = 0;
+JSSpec.Example.prototype.isFailure = function() {
+	return this.exception && this.exception.type == "failure";
+}
+JSSpec.Example.prototype.isError = function() {
+	return this.exception && this.exception.type == "error";
+}
+
 JSSpec.Example.prototype.getExecutor = function() {
 	var self = this;
 	var onException = function(executor, ex) {
@@ -268,19 +292,19 @@ JSSpec.Runner.prototype.hasException = function() {
 }
 JSSpec.Runner.prototype.getTotalFailures = function() {
 	var specs = this.specs;
-	var failure = 0;
+	var failures = 0;
 	for(var i = 0; i < specs.length; i++) {
-		if(specs[i].hasException()) failure++;
+		failures += specs[i].getTotalFailures();
 	}
-	return failure;
+	return failures;
 }
 JSSpec.Runner.prototype.getTotalErrors = function() {
 	var specs = this.specs;
-	var failure = 0;
+	var errors = 0;
 	for(var i = 0; i < specs.length; i++) {
-		if(specs[i].hasException()) failure++;
+		errors += specs[i].getTotalErrors();
 	}
-	return failure;
+	return errors;
 }
 
 JSSpec.Runner.prototype.run = function() {
@@ -338,12 +362,6 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	}
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
-	var summary = document.getElementById("summary");
-	var runner = JSSpec.runner;
-
-	summary.className = runner.hasException() ? "exception" : "success";
-	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
-	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
 	
 }
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
@@ -356,9 +374,13 @@ JSSpec.Logger.prototype.onSpecStart = function(spec) {
 JSSpec.Logger.prototype.onSpecEnd = function(spec) {
 	var div = document.getElementById("spec_" + spec.id);
 	div.className = spec.exception ? "exception" : "success";
-
+	
 	var heading = document.getElementById("spec_heading_" + spec.id);
 	heading.className = spec.hasException() ? "exception" : "success";
+	
+	if(spec.exception) {
+		heading.appendChild(document.createTextNode(" - " + spec.exception.message));
+	}
 }
 JSSpec.Logger.prototype.onExampleStart = function(example) {
 	var li = document.getElementById("example_" + example.id);
@@ -367,6 +389,22 @@ JSSpec.Logger.prototype.onExampleStart = function(example) {
 JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	var li = document.getElementById("example_" + example.id);
 	li.className = example.exception ? "exception" : "success";
+	
+	if(example.exception) {
+		var p = document.createElement("P");
+		p.appendChild(document.createElement("BR"))
+		p.appendChild(document.createTextNode(example.exception.message));
+		p.appendChild(document.createElement("BR"))
+		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ":" + example.exception.lineNumber));
+		li.appendChild(p);
+	}
+
+	var summary = document.getElementById("summary");
+	var runner = JSSpec.runner;
+
+	summary.className = runner.hasException() ? "exception" : "success";
+	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
+	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
 }
 
 
@@ -384,7 +422,13 @@ JSSpec.DSL.assertion = {
 		return {
 			be: function(expected) {
 				if(self != expected) {
-					JSSpec._assertionFailure = {message:"AssertionFailure", expected:expected, actual:self};
+					JSSpec._assertionFailure = {message:"'" + self + "' should be '" + expected + "'", expected:expected, actual:self};
+					throw JSSpec._assertionFailure;
+				}
+			},
+			not_be: function(expected) {
+				if(self == expected) {
+					JSSpec._assertionFailure = {message:"'" + self + "' should not be '" + expected + "'", expected:expected, actual:self};
 					throw JSSpec._assertionFailure;
 				}
 			}
