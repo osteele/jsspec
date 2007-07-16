@@ -1,3 +1,32 @@
 TODO:
- * Presto: parse e.message
- * Webkit: e.message, e.line, e.sourceUrl
+ * Equality for Array, Date, Dictionary
+ * More assertions:
+   * (V) should().be(expected)
+   * (V) should().not_be(expected)
+   
+   * should().be_true
+   * should().be_false
+   
+   * should().be_null
+   * should().not_be_null
+   
+   * should().be_undefined
+   * should().not_be_undefined
+   
+   * should().include(item)
+   * should().not_include(item)
+   
+   * should().match(pattern)
+   * should().not_match(pattern)
+   
+   * should().be_empty()
+   * should().not_be_empty()
+   
+   * should().have(5, "items")
+   * should().have_exaclty(5, "items")
+   * should().have_at_least(5, "items")
+   * should().have_at_most(5, "items") // for array
+   * should().have(5, "characters") // for String
+   * should().have(5, "players") // for arbitrary dictionary
+   
+ * Supports for Presto(Opera engine): e.message should be parsed, line number for embedded script should be corrected

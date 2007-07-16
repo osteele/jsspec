@@ -1,3 +1,27 @@
+/**
+ * JSSpec
+ *
+ * Copyright 2007 Alan Kang
+ *  - mailto:jania902@gmail.com
+ *  - http://jania.pe.kr
+ *
+ * http://code.google.com/p/jsspec/
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+ */
+
 // defining namespace
 JSSpec = {
 	specs: []
@@ -50,9 +74,7 @@ JSSpec.Executor.prototype.mergeExceptions = function(assertionFailure, normalExc
 	var merged = {
 		message:assertionFailure.message,
 		fileName:normalException.fileName,
-		lineNumber:normalException.lineNumber,
-		expected:assertionFailure.expected,
-		actual:assertionFailure.actual
+		lineNumber:normalException.lineNumber
 	};
 	
 	return merged;
@@ -404,10 +426,11 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	
 	if(example.exception) {
 		var p = document.createElement("P");
-		p.appendChild(document.createElement("BR"))
-		p.appendChild(document.createTextNode(example.exception.message));
-		p.appendChild(document.createElement("BR"))
-		p.appendChild(document.createElement("BR"))
+		
+		var div = document.createElement("DIV");
+		div.innerHTML = example.exception.message;
+		p.appendChild(div);
+		
 		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ":" + example.exception.lineNumber));
 		li.appendChild(p);
 	}
@@ -422,13 +445,50 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 
 
 
-// Equality
-JSSpec.Equality = function(expected, actual) {
+// Matcher
+JSSpec.Matcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 }
-JSSpec.Equality.prototype.isEqual = function() {
+JSSpec.Matcher.prototype.isEqual = function() {
 	return this.expected == this.actual;
+}
+JSSpec.Matcher.prototype.escapeHtml = function(str) {
+	if(!this._div) {
+		this._div = document.createElement("DIV");
+		this._text = document.createTextNode('');
+		this._div.appendChild(this._text);
+	}
+	this._text.data = str;
+	return this._div.innerHTML;
+	
+}
+JSSpec.Matcher.prototype.explain = function() {
+	if(this.expected._type == 'String' && this.actual._type == 'String') {
+		return this.explainForString(this.expected, this.actual);
+	} else {
+		return this.explainForString(this.expected.toString(), this.actual.toString());
+	}
+}
+JSSpec.Matcher.prototype.explainForString = function(expected, actual) {
+	var sb = [];
+	
+	sb.push('<p>actual value:</p>');
+	sb.push('<p style="margin-left:2em; font-family: monospace;">' + this.escapeHtml(expected) + '</p>');
+	sb.push('<p>should be:</p>');
+	sb.push('<p style="margin-left:2em; font-family: monospace;">' + this.escapeHtml(actual) + '</p>');
+	sb.push('<p>diff:</p>');
+	sb.push('<p style="margin-left:2em; font-family: monospace;">');
+
+	var dmp = new diff_match_patch();
+	var diff = dmp.diff_main(expected, actual);
+	dmp.diff_cleanupEfficiency(diff);
+	
+	sb.push(dmp.diff_prettyHtml(diff))
+	
+	sb.push('</p>');
+	
+	return sb.join("");
 }
 
 
@@ -443,18 +503,19 @@ JSSpec.DSL.forAll = {
 		if(JSSpec._secondPass) return {}
 		
 		var self = this;
+		
 		return {
 			be: function(expected) {
-				var equality = JSSpec.DSL.utils.compare(expected, self);
-				if(!equality.isEqual()) {
-					JSSpec._assertionFailure = {message:"'" + self + "' should be '" + expected + "'", expected:expected, actual:self};
+				var matcher = JSSpec.DSL.utils.compare(expected, self);
+				if(!matcher.isEqual()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
 			},
 			not_be: function(expected) {
-				var equality = JSSpec.DSL.utils.compare(expected, self);
-				if(equality.isEqual()) {
-					JSSpec._assertionFailure = {message:"'" + self + "' should not be '" + expected + "'", expected:expected, actual:self};
+				var matcher = JSSpec.DSL.utils.compare(expected, self);
+				if(matcher.isEqual()) {
+					JSSpec._assertionFailure = {message:"'" + self + "' should not be '" + expected + "'"};
 					throw JSSpec._assertionFailure;
 				}
 			}
@@ -504,7 +565,7 @@ JSSpec.DSL.forString = {
 
 JSSpec.DSL.utils = {
 	compare: function(expected, actual) {
-		return new JSSpec.Equality(expected, actual);
+		return new JSSpec.Matcher(expected, actual);
 	},
 	correctHtmlAttrQuotation: function(html) {
 		html = html.replace(/(\w+)=['"]([^'"]+)['"]/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
@@ -523,6 +584,11 @@ JSSpec.DSL.utils = {
 }
 
 describe = JSSpec.DSL.describe;
+
+String.prototype._type = "String";
+Number.prototype._type = "Number";
+Date.prototype._type = "Date";
+Array.prototype._type = "Array";
 
 var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype];
 for(var i = 0; i < targets.length; i++) {

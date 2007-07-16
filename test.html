@@ -4,6 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
 <title>Javascript spike</title>
 <link rel="stylesheet" type="text/css" href="JSSpec.css" />
+<script type="text/javascript" src="diff_match_patch.js"></script>
 <script type="text/javascript" src="JSSpec.js"></script>
 <script type="text/javascript">// <![CDATA[
 describe('Spec 1', {
@@ -12,10 +13,10 @@ describe('Spec 1', {
 	'before': function() {
 	},
 	'Example 1': function() {
-		"a".should().be("a");
+		new Date().toString().should().be(new Date(100).toString());
 	},
 	'Example 2': function() {
-		"b".should().be("b");
+		"b".should().be("c");
 	},
 	'Example 3': function() {
 		"c".should().be("c");
