@@ -23,20 +23,40 @@ JSSpec.Browser = {
 
 
 // Cross-platform exception handler. It helps to collect exact line number where exception occured.
-JSSpec.Executor = function(target, onSuccess, onException, twoPass) {
+JSSpec.Executor = function(target, onSuccess, onException) {
 	this.target = target;
 	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : function() {};
 	this.onException = typeof onException == 'function' ? onException : function() {};
-	this.twoPass = twoPass;
 	
 	if(JSSpec.Browser.Trident) {
 		window.onerror = function(message, fileName, lineNumber) {
-			var ex = {message:message, fileName:fileName, lineNumber:lineNumber};
 			var self = window._curExecutor;
-			self.onException(self, ex);
+			var ex = {message:message, fileName:fileName, lineNumber:lineNumber};
+
+			if(JSSPec._secondPass)  {
+				ex = self.mergeExceptions(JSSpec._assertionFailure, ex);
+				delete JSSpec._secondPass;
+				delete JSSpec._assertionFailure;
+
+				self.onException(self, ex);
+			} else if(JSSpec._assertionFailure) {
+				JSSpec._secondPass = true;
+				self.run();
+			} else {
+				self.onException(self, ex);
+			}
 			return true;
 		}
 	}
+}
+JSSpec.Executor.prototype.mergeExceptions = function(assertionFailure, normalException) {
+	var merged = {
+		message:assertionFailure.message,
+		fileName:normalException.fileName,
+		lineNumber:normalException.lineNumber
+	};
+	
+	return merged;
 }
 JSSpec.Executor.prototype.run = function() {
 	var self = this;
@@ -56,7 +76,18 @@ JSSpec.Executor.prototype.run = function() {
 					var result = self.target();
 					self.onSuccess(self, result);
 				} catch(ex) {
-					self.onException(self, ex);
+					if(JSSpec._secondPass)  {
+						ex = self.mergeExceptions(JSSpec._assertionFailure, ex);
+						delete JSSpec._secondPass;
+						delete JSSpec._assertionFailure;
+
+						self.onException(self, ex);
+					} else if(JSSpec._assertionFailure) {
+						JSSpec._secondPass = true;
+						self.run();
+					} else {
+						self.onException(self, ex);
+					}
 				}
 			}
 		},
@@ -161,13 +192,13 @@ JSSpec.Spec.prototype.getExecutor = function() {
 	var onException = function(executor, ex) {document.title += '"' + ex.lineNumber + '"'};
 
 	var composite = new JSSpec.CompositeExecutor();
-	composite.addExecutor(new JSSpec.Executor(this.beforeAll, null, onException, true));
+	composite.addExecutor(new JSSpec.Executor(this.beforeAll, null, onException));
 	
 	var exampleAndAfter = new JSSpec.CompositeExecutor(null,null,true);
 	for(var i = 0; i < this.examples.length; i++) {
 		exampleAndAfter.addExecutor(this.examples[i].getExecutor());
 	}
-	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll, null, onException, true));
+	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll, null, onException));
 	composite.addExecutor(exampleAndAfter);
 	return composite;
 }
@@ -186,12 +217,12 @@ JSSpec.Example.prototype.getExecutor = function() {
 	var onException = function(executor, ex) {document.title += '"' + ex.lineNumber + '"'};
 	
 	var composite = new JSSpec.CompositeExecutor();
-	composite.addExecutor(new JSSpec.Executor(this.before, null, onException, true));
+	composite.addExecutor(new JSSpec.Executor(this.before, null, onException));
 	
 	var targetAndAfter = new JSSpec.CompositeExecutor(null,null,true);
 
-	targetAndAfter.addExecutor(new JSSpec.Executor(this.target, null, onException, true));
-	targetAndAfter.addExecutor(new JSSpec.Executor(this.after, null, onException, true));
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.target, null, onException));
+	targetAndAfter.addExecutor(new JSSpec.Executor(this.after, null, onException));
 	
 	composite.addExecutor(targetAndAfter);
 
@@ -207,7 +238,16 @@ JSSpec.DSL.describe = function(context, entries) {
 }
 JSSpec.DSL.assertion = {
 	should:function() {
-		return {be: function() {}}
+		if(JSSpec._secondPass) return {}
+		
+		return {
+			be: function(expected) {
+				if(this != expected) {
+					JSSpec._assertionFailure = {message:"AssertionFailure"};
+					throw JSSpec._assertionFailure;
+				}
+			}
+		}
 	}
 }
 
