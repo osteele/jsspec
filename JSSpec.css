@@ -16,11 +16,11 @@ h1, h2, li {
 }
 
 div {
-	padding: 0.5em 1em;
+	padding: 0.5em 0.5em 0.5em 1em;
 }
 
 li {
-	margin: 0.2em 1em;
+	margin: 0.2em 0em 0.2em 1em;
 	padding-left: 1em;
 	list-style: none;
 }

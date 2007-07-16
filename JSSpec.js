@@ -4,6 +4,7 @@ JSSpec = {
 }
 
 
+JSSpec.EMPTY_FUNCTION = function() {};
 
 // Browser detection code
 JSSpec.Browser = {
@@ -18,8 +19,8 @@ JSSpec.Browser = {
 // Exception handler for Trident. It helps to collect exact line number where exception occured.
 JSSpec.Executor = function(target, onSuccess, onException) {
 	this.target = target;
-	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : function() {};
-	this.onException = typeof onException == 'function' ? onException : function() {};
+	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : JSSpec.EMPTY_FUNCTION;
+	this.onException = typeof onException == 'function' ? onException : JSSpec.EMPTY_FUNCTION;
 	
 	if(JSSpec.Browser.Trident) {
 		window.onerror = function(message, fileName, lineNumber) {
@@ -102,8 +103,8 @@ JSSpec.Executor.prototype.run = function() {
 // CompositeExecutor composites one or more executors and execute them sequencially.
 JSSpec.CompositeExecutor = function(onSuccess, onException, continueOnException) {
 	this.queue = [];
-	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : function() {};
-	this.onException = typeof onException == 'function' ? onException : function() {};
+	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : JSSpec.EMPTY_FUNCTION;
+	this.onException = typeof onException == 'function' ? onException : JSSpec.EMPTY_FUNCTION;
 	this.continueOnException = !!continueOnException;
 }
 JSSpec.CompositeExecutor.prototype.addFunction = function(func) {
@@ -194,10 +195,10 @@ JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
 	}
 }
 JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
-	this.beforeEach = function() {};
-	this.beforeAll = function() {};
-	this.afterEach = function() {};
-	this.afterAll = function() {};
+	this.beforeEach = JSSpec.EMPTY_FUNCTION;
+	this.beforeAll = JSSpec.EMPTY_FUNCTION;
+	this.afterEach = JSSpec.EMPTY_FUNCTION;
+	this.afterAll = JSSpec.EMPTY_FUNCTION;
 	
 	for(name in entries) {
 		if(name == 'before' || name == 'before each') {
@@ -421,25 +422,38 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 
 
 
+// Equality
+JSSpec.Equality = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+}
+JSSpec.Equality.prototype.isEqual = function() {
+	return this.expected == this.actual;
+}
+
+
+
 // Domain Specific Languages
 JSSpec.DSL = {};
 JSSpec.DSL.describe = function(context, entries) {
 	JSSpec.specs.push(new JSSpec.Spec(context, entries));
 }
-JSSpec.DSL.assertion = {
+JSSpec.DSL.forAll = {
 	should:function() {
 		if(JSSpec._secondPass) return {}
 		
 		var self = this;
 		return {
 			be: function(expected) {
-				if(self != expected) {
+				var equality = JSSpec.DSL.utils.compare(expected, self);
+				if(!equality.isEqual()) {
 					JSSpec._assertionFailure = {message:"'" + self + "' should be '" + expected + "'", expected:expected, actual:self};
 					throw JSSpec._assertionFailure;
 				}
 			},
 			not_be: function(expected) {
-				if(self == expected) {
+				var equality = JSSpec.DSL.utils.compare(expected, self);
+				if(equality.isEqual()) {
 					JSSpec._assertionFailure = {message:"'" + self + "' should not be '" + expected + "'", expected:expected, actual:self};
 					throw JSSpec._assertionFailure;
 				}
@@ -447,13 +461,75 @@ JSSpec.DSL.assertion = {
 		}
 	}
 }
+JSSpec.DSL.forString = {
+	asHtml: function() {
+		var html = this;
+			
+		// 속성 따옴표 통일, 태그 이름 및 속성 부분 소문자로
+		html = html.replace(/<(\/?)(\w+)([^>]*?)>/img, function(str, closingMark, tagName, attrs) {
+			var sortedAttrs = JSSpec.DSL.utils.sortHtmlAttrs(JSSpec.DSL.utils.correctHtmlAttrQuotation(attrs).toLowerCase())
+			return "<" + closingMark + tagName.toLowerCase() + sortedAttrs + ">"
+		})
+		
+		// 닫는 태그 validation
+		html = html.replace(/<br([^>]*?)>/mg, function(str, attrs) {
+			return "<br" + attrs + " />"
+		})
+		html = html.replace(/<hr([^>]*?)>/mg, function(str, attrs) {
+			return "<hr" + attrs + " />"
+		})
+		html = html.replace(/<img([^>]*?)>/mg, function(str, attrs) {
+			return "<img" + attrs + " />"
+		})
+		
+		// style 뒤에 세미콜론 없으면 추가
+		html = html.replace(/style="(.*)"/mg, function(str, styleStr) {
+			if(styleStr.charAt(styleStr.length - 1) != ';') styleStr += ";"
+			return 'style="' + styleStr + '"'
+		})
+		
+		// 빈 style 제거
+		html = html.replace(/ style=";"/mg, "")
+		
+		// 줄바꿈 제거
+		html = html.replace(/\r/mg, '')
+		html = html.replace(/\n/mg, '')
+		html = html.replace(/(>[^<>]*?)\s+([^<>]*?<)/mg, '$1$2')
+		
+		return html;
+	}
+}
+
+
+
+JSSpec.DSL.utils = {
+	compare: function(expected, actual) {
+		return new JSSpec.Equality(expected, actual);
+	},
+	correctHtmlAttrQuotation: function(html) {
+		html = html.replace(/(\w+)=['"]([^'"]+)['"]/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
+		html = html.replace(/(\w+)=([^ '"]+)/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
+		html = html.replace(/'/mg, '"');
+		
+		return html;
+	},
+	sortHtmlAttrs: function(html) {
+		var attrs = []
+		html.replace(/((\w+)="[^"]+")/mg, function(str, matched) {
+			attrs.push(matched);
+		})
+		return attrs.length == 0 ? "" : " " + attrs.sort().join(" ");
+	}
+}
 
 describe = JSSpec.DSL.describe;
 
 var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype];
 for(var i = 0; i < targets.length; i++) {
-	targets[i].should = JSSpec.DSL.assertion.should;
+	targets[i].should = JSSpec.DSL.forAll.should;
 }
+
+String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 
 
 
