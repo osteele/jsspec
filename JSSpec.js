@@ -272,6 +272,8 @@ JSSpec.Logger = function() {}
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
 	var summary = document.createElement("H1");
+	summary.id = "summary";
+	summary.className = "ongoing";
 	summary.innerHTML = 'JSSpec results - <span id="total_specs">0</span> specs / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors';
 	document.body.appendChild(summary);
 	
@@ -282,6 +284,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		var spec = specs[i];
 		var div = document.createElement("DIV");
 		div.id = "spec_" + spec.id;
+		div.className = "waiting";
 		document.body.appendChild(div);
 		
 		var heading = document.createElement("H2");
@@ -297,6 +300,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			var example = examples[j];
 			var li = document.createElement("LI");
 			li.id = "example_" + example.id;
+			li.className = "waiting";
 			var p = document.createElement("P");
 			p.appendChild(document.createTextNode(example.name));
 			li.appendChild(p);
@@ -305,6 +309,9 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	}
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
+	var summary = document.getElementById("summary");
+	// TODO
+	summary.className = "success";
 }
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
 	var div = document.getElementById("spec_" + spec.id);

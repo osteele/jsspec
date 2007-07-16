@@ -1,0 +1,21 @@
+@CHARSET "UTF-8";
+
+body, h1, h2, div, ul, li, p {
+	padding: 0;
+	margin: 0;
+}
+
+.waiting {
+	background-color: #F0F0F0;
+}
+.ongoing {
+	background-color: #FFFFC0;
+}
+.success {
+	color: #3d7700;
+	background-color: #DBFFB4;
+}
+.exception {
+	color: #C20000;
+	background-color: #FFFBD3;
+}
