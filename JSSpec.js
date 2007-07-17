@@ -450,37 +450,119 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 
 
 
-// Matcher
-JSSpec.Matcher = {}
+// Property length Matcher
+JSSpec.PropertyLengthMatcher = function(num, property, o) {
+	this.num = num;
+	this.property = property;
+	this.o = o;
+	this.match = false;
+	this.explaination = this.makeExplain();
+}
+JSSpec.PropertyLengthMatcher.prototype.makeExplain = function() {
+	if(this.o._type == 'String' && this.property == 'characters' && this.o.length != this.num) {
+		return this.makeExplainForString();
+	} else if(typeof this.o.length != 'undefined' && this.property == "items" && this.o.length != this.num) {
+		return this.makeExplainForArray();
+	} else if(typeof this.o[this.property] != 'undefined' && this.o[this.property] != null && this.o[this.property].length != this.num) {
+		return this.makeExplainForObject();
+	} else {
+		return this.makeExplainForNoProperty();
+	}
+	
+	this.match = true;
+}
+JSSpec.PropertyLengthMatcher.prototype.makeExplainForString = function() {
+	var sb = [];
+	
+	var exp = this.num == 0 ?
+		'be an <strong>empty string</strong>' :
+		'have <strong>' + this.num + ' characters</strong>';
+	
+	sb.push('<p>actual value has <strong>' + this.o.length + ' characters</strong>:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o) + '</p>');
+	sb.push('<p>but it should ' + exp + '.</p>');
+	
+	return sb.join("");
+}
+JSSpec.PropertyLengthMatcher.prototype.makeExplainForArray = function() {
+	var sb = [];
+	
+	var exp = this.num == 0 ?
+		'be an <strong>empty array</strong>' :
+		'have <strong>' + this.num + ' items</strong>'
 
-JSSpec.Matcher.createInstance = function(expected, actual) {
+	sb.push('<p>actual value has <strong>' + this.o.length + ' items</strong>:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o) + '</p>');
+	sb.push('<p>but it should ' + exp + '.</p>');
+	
+	return sb.join("");
+}
+JSSpec.PropertyLengthMatcher.prototype.makeExplainForObject = function() {
+	var sb = [];
+
+	var exp = this.num == 0 ?
+		'be <strong>empty</strong>' :
+		'have <strong>' + this.num + ' ' + this.property + '</strong>'
+
+	sb.push('<p>actual value has <strong>' + this.o[this.property].length + ' ' + this.property + '</strong>:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o, false, this.property) + '</p>');
+	sb.push('<p>but it should ' + exp + '.</p>');
+	
+	return sb.join("");
+}
+JSSpec.PropertyLengthMatcher.prototype.makeExplainForNoProperty = function() {
+	var sb = [];
+	
+	sb.push('<p>actual value:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o) + '</p>');
+	sb.push('<p>should have <strong>' + this.num + ' ' + this.property + '</strong> but there\'s no such property.</p>');
+	
+	return sb.join("");
+}
+JSSpec.PropertyLengthMatcher.prototype.matches = function() {
+	return this.match;
+}
+JSSpec.PropertyLengthMatcher.prototype.explain = function() {
+	return this.explaination;
+}
+
+JSSpec.PropertyLengthMatcher.createInstance = function(num, property, o) {
+	return new JSSpec.PropertyLengthMatcher(num, property, o);
+}
+
+
+
+// Equality Matcher
+JSSpec.EqualityMatcher = {}
+
+JSSpec.EqualityMatcher.createInstance = function(expected, actual) {
 	if(expected == null || actual == null) {
-		return new JSSpec.NullMatcher(expected, actual);
+		return new JSSpec.NullEqualityMatcher(expected, actual);
 	} else if(expected._type == actual._type) {
 		if(expected._type == "String") {
-			return new JSSpec.StringMatcher(expected, actual);
+			return new JSSpec.StringEqualityMatcher(expected, actual);
 		} else if(expected._type == "Date") {
-			return new JSSpec.DateMatcher(expected, actual);
+			return new JSSpec.DateEqualityMatcher(expected, actual);
 		} else if(expected._type == "Number") {
-			return new JSSpec.NumberMatcher(expected, actual);
+			return new JSSpec.NumberEqualityMatcher(expected, actual);
 		} else if(expected._type == "Array") {
-			return new JSSpec.ArrayMatcher(expected, actual);
+			return new JSSpec.ArrayEqualityMatcher(expected, actual);
 		}
 	}
 	
-	return new JSSpec.ObjectMatcher(expected, actual);
+	return new JSSpec.ObjectEqualityMatcher(expected, actual);
 }
-JSSpec.Matcher.basicExplain = function(expected, actual, expectedDesc, actualDesc) {
+JSSpec.EqualityMatcher.basicExplain = function(expected, actual, expectedDesc, actualDesc) {
 	var sb = [];
 	
-	sb.push(actualDesc || '<p>actual value is:</p>');
+	sb.push(actualDesc || '<p>actual value:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(actual) + '</p>');
-	sb.push(expectedDesc || '<p>but it should be:</p>');
+	sb.push(expectedDesc || '<p>should be:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(expected) + '</p>');
 	
 	return sb.join("");
 }
-JSSpec.Matcher.diffExplain = function(expected, actual) {
+JSSpec.EqualityMatcher.diffExplain = function(expected, actual) {
 	var sb = [];
 
 	sb.push('<p>diff:</p>');
@@ -497,44 +579,44 @@ JSSpec.Matcher.diffExplain = function(expected, actual) {
 	return sb.join("");
 }
 
-JSSpec.NullMatcher = function(expected, actual) {
+JSSpec.NullEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 }
-JSSpec.NullMatcher.prototype.matches = function() {
+JSSpec.NullEqualityMatcher.prototype.matches = function() {
 	return this.expected == this.actual;
 }
-JSSpec.NullMatcher.prototype.explain = function() {
-	return JSSpec.Matcher.basicExplain(this.expected, this.actual);
+JSSpec.NullEqualityMatcher.prototype.explain = function() {
+	return JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual);
 }
 
 
 
-JSSpec.DateMatcher = function(expected, actual) {
+JSSpec.DateEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 }
-JSSpec.DateMatcher.prototype.matches = function() {return this.expected == this.actual}
-JSSpec.DateMatcher.prototype.explain = function() {
+JSSpec.DateEqualityMatcher.prototype.matches = function() {return this.expected == this.actual}
+JSSpec.DateEqualityMatcher.prototype.explain = function() {
 	var sb = [];
 	
-	sb.push(JSSpec.Matcher.basicExplain(this.expected, this.actual));
-	sb.push(JSSpec.Matcher.diffExplain(this.expected.toString(), this.actual.toString()));
+	sb.push(JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual));
+	sb.push(JSSpec.EqualityMatcher.diffExplain(this.expected.toString(), this.actual.toString()));
 
 	return sb.join("");
 }
 
 
 
-JSSpec.ObjectMatcher = function(expected, actual) {
+JSSpec.ObjectEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 	this.match = this.expected == this.actual;
 	this.explaination = this.makeExplain();
 }
-JSSpec.ObjectMatcher.prototype.matches = function() {return this.match}
-JSSpec.ObjectMatcher.prototype.explain = function() {return this.explaination}
-JSSpec.ObjectMatcher.prototype.makeExplain = function() {
+JSSpec.ObjectEqualityMatcher.prototype.matches = function() {return this.match}
+JSSpec.ObjectEqualityMatcher.prototype.explain = function() {return this.explaination}
+JSSpec.ObjectEqualityMatcher.prototype.makeExplain = function() {
 	for(var key in this.expected) {
 		if(key == "should") continue;
 		var expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
@@ -550,13 +632,13 @@ JSSpec.ObjectMatcher.prototype.makeExplain = function() {
 	
 	for(var key in this.expected) {
 		if(key == "should") continue;
-		var matcher = JSSpec.Matcher.createInstance(this.expected[key], this.actual[key]);
+		var matcher = JSSpec.EqualityMatcher.createInstance(this.expected[key], this.actual[key]);
 		if(!matcher.matches()) return this.makeExplainForItemMismatch(key);
 	}
 		
 	this.match = true;
 }
-JSSpec.ObjectMatcher.prototype.makeExplainForMissingItem = function(key) {
+JSSpec.ObjectEqualityMatcher.prototype.makeExplainForMissingItem = function(key) {
 	var sb = [];
 
 	sb.push('<p>actual value has no item named <strong>' + JSSpec.util.inspect(key) + '</strong></p>');
@@ -566,7 +648,7 @@ JSSpec.ObjectMatcher.prototype.makeExplainForMissingItem = function(key) {
 	
 	return sb.join("");
 }
-JSSpec.ObjectMatcher.prototype.makeExplainForUnknownItem = function(key) {
+JSSpec.ObjectEqualityMatcher.prototype.makeExplainForUnknownItem = function(key) {
 	var sb = [];
 
 	sb.push('<p>actual value has item named <strong>' + JSSpec.util.inspect(key) + '</strong></p>');
@@ -576,7 +658,7 @@ JSSpec.ObjectMatcher.prototype.makeExplainForUnknownItem = function(key) {
 	
 	return sb.join("");
 }
-JSSpec.ObjectMatcher.prototype.makeExplainForItemMismatch = function(key) {
+JSSpec.ObjectEqualityMatcher.prototype.makeExplainForItemMismatch = function(key) {
 	var sb = [];
 
 	sb.push('<p>actual value has an item named <strong>' + JSSpec.util.inspect(key) + '</strong> whose value is <strong>' + JSSpec.util.inspect(this.actual[key]) + '</strong></p>');
@@ -589,33 +671,33 @@ JSSpec.ObjectMatcher.prototype.makeExplainForItemMismatch = function(key) {
 
 
 
-JSSpec.ArrayMatcher = function(expected, actual) {
+JSSpec.ArrayEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 	this.match = this.expected == this.actual;
 	this.explaination = this.makeExplain();
 }
-JSSpec.ArrayMatcher.prototype.matches = function() {return this.match}
-JSSpec.ArrayMatcher.prototype.explain = function() {return this.explaination}
-JSSpec.ArrayMatcher.prototype.makeExplain = function() {
+JSSpec.ArrayEqualityMatcher.prototype.matches = function() {return this.match}
+JSSpec.ArrayEqualityMatcher.prototype.explain = function() {return this.explaination}
+JSSpec.ArrayEqualityMatcher.prototype.makeExplain = function() {
 	if(this.expected.length != this.actual.length) return this.makeExplainForLengthMismatch();
 	
 	for(var i = 0; i < this.expected.length; i++) {
-		var matcher = JSSpec.Matcher.createInstance(this.expected[i], this.actual[i]);
+		var matcher = JSSpec.EqualityMatcher.createInstance(this.expected[i], this.actual[i]);
 		if(!matcher.matches()) return this.makeExplainForItemMismatch(i);
 	}
 		
 	this.match = true;
 }
-JSSpec.ArrayMatcher.prototype.makeExplainForLengthMismatch = function() {
-	return JSSpec.Matcher.basicExplain(
+JSSpec.ArrayEqualityMatcher.prototype.makeExplainForLengthMismatch = function() {
+	return JSSpec.EqualityMatcher.basicExplain(
 		this.expected,
 		this.actual,
 		'<p>but it should be <strong>' + this.expected.length + '</strong></p>',
 		'<p>actual value has <strong>' + this.actual.length + '</strong> items</p>'
 	);
 }
-JSSpec.ArrayMatcher.prototype.makeExplainForItemMismatch = function(index) {
+JSSpec.ArrayEqualityMatcher.prototype.makeExplainForItemMismatch = function(index) {
 	var postfix = ["th", "st", "nd", "rd", "th"][(index + 1) % 10];
 
 	var sb = [];
@@ -629,31 +711,31 @@ JSSpec.ArrayMatcher.prototype.makeExplainForItemMismatch = function(index) {
 }
 
 
-JSSpec.NumberMatcher = function(expected, actual) {
+JSSpec.NumberEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 }
-JSSpec.NumberMatcher.prototype.matches = function() {
+JSSpec.NumberEqualityMatcher.prototype.matches = function() {
 	if(this.expected == this.actual) return true;
 }
-JSSpec.NumberMatcher.prototype.explain = function() {
-	return JSSpec.Matcher.basicExplain(this.expected, this.actual);
+JSSpec.NumberEqualityMatcher.prototype.explain = function() {
+	return JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual);
 }
 
 
 
-JSSpec.StringMatcher = function(expected, actual) {
+JSSpec.StringEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 }
-JSSpec.StringMatcher.prototype.matches = function() {
+JSSpec.StringEqualityMatcher.prototype.matches = function() {
 	if(this.expected == this.actual) return true;
 }
-JSSpec.StringMatcher.prototype.explain = function() {
+JSSpec.StringEqualityMatcher.prototype.explain = function() {
 	var sb = [];
 
-	sb.push(JSSpec.Matcher.basicExplain(this.expected, this.actual));
-	sb.push(JSSpec.Matcher.diffExplain(this.expected, this.actual));	
+	sb.push(JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual));
+	sb.push(JSSpec.EqualityMatcher.diffExplain(this.expected, this.actual));	
 	return sb.join("");
 }
 
@@ -672,16 +754,26 @@ JSSpec.DSL.forAll = {
 		
 		return {
 			be: function(expected) {
-				var matcher = JSSpec.Matcher.createInstance(expected, self);
+				var matcher = JSSpec.EqualityMatcher.createInstance(expected, self);
 				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
 			},
 			not_be: function(expected) {
-				var matcher = JSSpec.Matcher.createInstance(expected, self);
+				var matcher = JSSpec.EqualityMatcher.createInstance(expected, self);
 				if(matcher.matches()) {
 					JSSpec._assertionFailure = {message:"'" + self + "' should not be '" + expected + "'"};
+					throw JSSpec._assertionFailure;
+				}
+			},
+			be_empty: function() {
+				this.have(0, self._type == 'String' ? 'characters' : 'items');
+			},
+			have: function(num, property) {
+				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self);
+				if(!matcher.matches()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
 			}
@@ -764,7 +856,7 @@ JSSpec.util = {
 				var inspected = JSSpec.util.inspect(o[i]);
 				sb.push(i == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
 			}
-			return '<span class="array_value">' + sb.join(', ') + '</span>';
+			return '<span class="array_value">[' + sb.join(', ') + ']</span>';
 		}
 		
 		if(o._type == 'Date') {
@@ -781,7 +873,7 @@ JSSpec.util = {
 			var inspected = JSSpec.util.inspect(key) + ":" + JSSpec.util.inspect(o[key]);
 			sb.push(key == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
 		}
-		return '<span class="object_value">' + sb.join(', ') + '</span>';
+		return '<span class="object_value">{' + sb.join(', ') + '}</span>';
 	}
 }
 

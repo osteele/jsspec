@@ -7,21 +7,54 @@
 <script type="text/javascript" src="diff_match_patch.js"></script>
 <script type="text/javascript" src="JSSpec.js"></script>
 <script type="text/javascript">// <![CDATA[
-describe('Spec 1 - Failure messages', {
+describe('Plus operator (just for example)', {
+	'should concatenate two strings': function() {
+		("Hello " + "World").should().be("Hello World");
+	},
+	'should add two numbers': function() {
+		(1 + 2).should().be(3);
+	}
+})
+describe('"Should have"s', {
+	'String length': function() {
+		"Hello".should().have(4, "characters");
+	},
+	'Array length': function() {
+		[1,2,3].should().have(2, "items");
+	},
+	'Object\'s item length': function() {
+		$X({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
+	},
+	'No match': function() {
+		"This is a string".should().have(5, "players");
+	}
+})
+describe('"Should be empty"s', {
+	'String': function() {
+		"Hello".should().be_empty();
+	},
+	'Array': function() {
+		[1,2,3].should().be_empty();
+	},
+	'Object\'s item': function() {
+		$X({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(0, "accounts");
+	}
+})
+describe('"Should be"s', {
+	'String mismatch': function() {
+		"Hello world".should().be("Good-bye world");
+	},
+	'Array item mismatch': function() {
+		['ab','cd','ef'].should().be(['ab','bd','ef']);
+	},
+	'Array length mismatch': function() {
+		['a',2,'4',5].should().be([1,2,[4,5,6],6,7]);
+	},
 	'Undefined value': function() {
 		"Test".should().be(undefined);
 	},
 	'Null value': function() {
 		"Test".should().be(null);
-	},
-	'String mismatch': function() {
-		"Hello world".should().be("Good-bye world");
-	},
-	'Array length mismatch': function() {
-		['a',2,'4',5].should().be([1,2,[4,5,6],6,7]);
-	},
-	'Array item mismatch': function() {
-		['ab','cd','ef'].should().be(['ab','bd','ef']);
 	},
 	'Number mismatch': function() {
 		(1+2).should().be(4);
@@ -46,26 +79,6 @@ describe('Spec 1 - Failure messages', {
 		var expected = {a:1, b:2, c:3};
 		
 		$X(actual).should().be(expected);
-	}
-})
-describe('Spec 2', {
-	'Example 4': function() {
-		"a".should().be("a");
-	},
-	'Example 5': function() {
-		"b".should().be("b");
-	},
-	'Example 6': function() {
-	}
-})
-describe('Spec 3', {
-	'before': function() {
-	},
-	'Example 7': function() {
-	},
-	'Example 8': function() {
-	},
-	'Example 9': function() {
 	}
 })
 // ]]></script>
