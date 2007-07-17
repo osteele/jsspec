@@ -1,11 +1,14 @@
+== 2007/07/17 ==
+ * StringMatcher now showing diffs
+ * Added ArrayMatcher, DateMatcher, NumberMatcher, ObjectMatcher, NullMatcher
+
+== 2007/07/16 ==
+ * Initial release.
+ * Supporting should().be(), should().not_be()
+ * Matcher for String.
+
 TODO:
  * Matchers
-   * (V) Array
-   * (V) Date
-   * (V) Number
-   * (V) Object
-   * (V) String
-   * Null or Undefined
    * Different type
    * DOM element
 
