@@ -698,8 +698,8 @@ JSSpec.ArrayEqualityMatcher.prototype.makeExplainForLengthMismatch = function() 
 	);
 }
 JSSpec.ArrayEqualityMatcher.prototype.makeExplainForItemMismatch = function(index) {
-	var postfix = ["th", "st", "nd", "rd", "th"][(index + 1) % 10];
-
+	var postfix = ["th", "st", "nd", "rd", "th"][Math.min((index + 1) % 10,4)];
+	
 	var sb = [];
 
 	sb.push('<p>' + (index + 1) + postfix + ' item (index ' + index + ') of actual value is <strong>' + JSSpec.util.inspect(this.actual[index]) + '</strong>:</p>');
