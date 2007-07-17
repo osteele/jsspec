@@ -2,26 +2,50 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko">
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
-<title>Javascript spike</title>
+<title>JSSpec results</title>
 <link rel="stylesheet" type="text/css" href="JSSpec.css" />
 <script type="text/javascript" src="diff_match_patch.js"></script>
 <script type="text/javascript" src="JSSpec.js"></script>
 <script type="text/javascript">// <![CDATA[
-describe('Spec 1', {
-	'before all': function() {
+describe('Spec 1 - Failure messages', {
+	'Undefined value': function() {
+		"Test".should().be(undefined);
 	},
-	'before': function() {
+	'Null value': function() {
+		"Test".should().be(null);
 	},
-	'Example 1': function() {
-		new Date().toString().should().be(new Date(100).toString());
+	'String mismatch': function() {
+		"Hello world".should().be("Good-bye world");
 	},
-	'Example 2': function() {
-		"b".should().be("c");
+	'Array length mismatch': function() {
+		['a',2,'4',5].should().be([1,2,[4,5,6],6,7]);
 	},
-	'Example 3': function() {
-		"c".should().be("c");
+	'Array item mismatch': function() {
+		['ab','cd','ef'].should().be(['ab','bd','ef']);
 	},
-	'after': function() {
+	'Number mismatch': function() {
+		(1+2).should().be(4);
+	},
+	'Date mismatch': function() {
+		new Date(1979, 3, 27).should().be(new Date(1976, 7, 23));
+	},
+	'Object mismatch 1': function() {
+		var actual = {a:1, b:2};
+		var expected = {a:1, b:2, d:3};
+		
+		$X(actual).should().be(expected);
+	},
+	'Object mismatch 2': function() {
+		var actual = {a:1, b:2, c:3, d:4};
+		var expected = {a:1, b:2, c:3};
+		
+		$X(actual).should().be(expected);
+	},
+	'Object mismatch 3': function() {
+		var actual = {a:1, b:4, c:3};
+		var expected = {a:1, b:2, c:3};
+		
+		$X(actual).should().be(expected);
 	}
 })
 describe('Spec 2', {
@@ -29,17 +53,15 @@ describe('Spec 2', {
 		"a".should().be("a");
 	},
 	'Example 5': function() {
-		"a".should().be("b");
+		"b".should().be("b");
 	},
 	'Example 6': function() {
-		x.y();
 	}
 })
 describe('Spec 3', {
 	'before': function() {
 	},
 	'Example 7': function() {
-		"a".should().not_be("a");
 	},
 	'Example 8': function() {
 	},

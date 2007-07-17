@@ -4,14 +4,14 @@
 	padding: 0;
 	margin: 0;
 	font-family: "Lucida Grande", Helvetica, sans-serif;
+	line-height: 1.5em;
 }
 
 h1, h2, li {
 	font-size: 2em;
 	padding: 0.2em;
 	border-style: solid;
-	border-top-width: 1px;
-	border-bottom-width: 1px;
+	border-width: 1px;
 	border-color: white;
 }
 
@@ -62,4 +62,29 @@ li.exception {
 	color: #C20000;
 	background-color: #FFFBD3;
 	border-color: #C20000;
+}
+
+
+
+.number_value, .string_value {
+	font-family: monospace;
+	color: blue;
+}
+.object_value, .array_value {
+	line-height: 2em;
+	padding: 0.1em 0.2em;
+	margin: 0.1em 0;
+	border: 1px solid blue;
+}
+.date_value {
+	font-family: monospace;
+	color: olive;
+}
+.undefined_value, .null_value {
+	font-style: italic;
+	color: blue;
+}
+strong {
+	font-weight: normal;
+	background-color: #FFC6C6;
 }

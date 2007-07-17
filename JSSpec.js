@@ -359,12 +359,13 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	var summary = document.createElement("H1");
 	summary.id = "summary";
 	summary.className = "ongoing";
-	summary.innerHTML = 'JSSpec results <span style="font-size:0.75em;">(<span id="total_specs">0</span> specs / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors)</span>';
+	summary.innerHTML = 'JSSpec results <span style="font-size:0.5em;">(<span id="total_examples">0</span> examples / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors)</span>';
 	document.body.appendChild(summary);
 	
 	var specs = JSSpec.runner.getSpecs();
-	document.getElementById("total_specs").innerHTML = specs.length;
-	
+
+	var total_examples = 0;
+		
 	for(var i = 0; i < specs.length; i++) {
 		var spec = specs[i];
 		var div = document.createElement("DIV");
@@ -384,6 +385,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		div.appendChild(ul);
 		
 		for(var j = 0; j < examples.length; j++) {
+			total_examples++;
 			var example = examples[j];
 			var li = document.createElement("LI");
 			li.id = "example_" + example.id;
@@ -394,6 +396,8 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			ul.appendChild(li);
 		}
 	}
+
+	document.getElementById("total_examples").innerHTML = total_examples;
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
 	
@@ -431,7 +435,7 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 		div.innerHTML = example.exception.message;
 		p.appendChild(div);
 		
-		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ":" + example.exception.lineNumber));
+		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ", line " + example.exception.lineNumber));
 		li.appendChild(p);
 	}
 	
@@ -441,53 +445,215 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	summary.className = runner.hasException() ? "exception" : "success";
 	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
 	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
+
 }
 
 
 
 // Matcher
-JSSpec.Matcher = function(expected, actual) {
-	this.expected = expected;
-	this.actual = actual;
-}
-JSSpec.Matcher.prototype.isEqual = function() {
-	return this.expected == this.actual;
-}
-JSSpec.Matcher.prototype.escapeHtml = function(str) {
-	if(!this._div) {
-		this._div = document.createElement("DIV");
-		this._text = document.createTextNode('');
-		this._div.appendChild(this._text);
+JSSpec.Matcher = {}
+
+JSSpec.Matcher.createInstance = function(expected, actual) {
+	if(expected == null || actual == null) {
+		return new JSSpec.NullMatcher(expected, actual);
+	} else if(expected._type == actual._type) {
+		if(expected._type == "String") {
+			return new JSSpec.StringMatcher(expected, actual);
+		} else if(expected._type == "Date") {
+			return new JSSpec.DateMatcher(expected, actual);
+		} else if(expected._type == "Number") {
+			return new JSSpec.NumberMatcher(expected, actual);
+		} else if(expected._type == "Array") {
+			return new JSSpec.ArrayMatcher(expected, actual);
+		}
 	}
-	this._text.data = str;
-	return this._div.innerHTML;
 	
+	return new JSSpec.ObjectMatcher(expected, actual);
 }
-JSSpec.Matcher.prototype.explain = function() {
-	if(this.expected._type == 'String' && this.actual._type == 'String') {
-		return this.explainForString(this.expected, this.actual);
-	} else {
-		return this.explainForString(this.expected.toString(), this.actual.toString());
-	}
-}
-JSSpec.Matcher.prototype.explainForString = function(expected, actual) {
+JSSpec.Matcher.basicExplain = function(expected, actual, expectedDesc, actualDesc) {
 	var sb = [];
 	
-	sb.push('<p>actual value:</p>');
-	sb.push('<p style="margin-left:2em; font-family: monospace;">' + this.escapeHtml(expected) + '</p>');
-	sb.push('<p>should be:</p>');
-	sb.push('<p style="margin-left:2em; font-family: monospace;">' + this.escapeHtml(actual) + '</p>');
-	sb.push('<p>diff:</p>');
-	sb.push('<p style="margin-left:2em; font-family: monospace;">');
+	sb.push(actualDesc || '<p>actual value is:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(actual) + '</p>');
+	sb.push(expectedDesc || '<p>but it should be:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(expected) + '</p>');
+	
+	return sb.join("");
+}
+JSSpec.Matcher.diffExplain = function(expected, actual) {
+	var sb = [];
 
+	sb.push('<p>diff:</p>');
+	sb.push('<p style="margin-left:2em;">');
+	
 	var dmp = new diff_match_patch();
 	var diff = dmp.diff_main(expected, actual);
 	dmp.diff_cleanupEfficiency(diff);
 	
-	sb.push(dmp.diff_prettyHtml(diff))
+	sb.push(JSSpec.util.inspect(dmp.diff_prettyHtml(diff), true));
 	
 	sb.push('</p>');
 	
+	return sb.join("");
+}
+
+JSSpec.NullMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+}
+JSSpec.NullMatcher.prototype.matches = function() {
+	return this.expected == this.actual;
+}
+JSSpec.NullMatcher.prototype.explain = function() {
+	return JSSpec.Matcher.basicExplain(this.expected, this.actual);
+}
+
+
+
+JSSpec.DateMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+}
+JSSpec.DateMatcher.prototype.matches = function() {return this.expected == this.actual}
+JSSpec.DateMatcher.prototype.explain = function() {
+	var sb = [];
+	
+	sb.push(JSSpec.Matcher.basicExplain(this.expected, this.actual));
+	sb.push(JSSpec.Matcher.diffExplain(this.expected.toString(), this.actual.toString()));
+
+	return sb.join("");
+}
+
+
+
+JSSpec.ObjectMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+	this.match = this.expected == this.actual;
+	this.explaination = this.makeExplain();
+}
+JSSpec.ObjectMatcher.prototype.matches = function() {return this.match}
+JSSpec.ObjectMatcher.prototype.explain = function() {return this.explaination}
+JSSpec.ObjectMatcher.prototype.makeExplain = function() {
+	for(var key in this.expected) {
+		if(key == "should") continue;
+		var expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
+		var actualHasItem = this.actual[key] != null && typeof this.actual[key] != 'undefined';
+		if(expectedHasItem && !actualHasItem) return this.makeExplainForMissingItem(key);
+	}
+	for(var key in this.actual) {
+		if(key == "should") continue;
+		var expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
+		var actualHasItem = this.actual[key] != null && typeof this.actual[key] != 'undefined';
+		if(actualHasItem && !expectedHasItem) return this.makeExplainForUnknownItem(key);
+	}
+	
+	for(var key in this.expected) {
+		if(key == "should") continue;
+		var matcher = JSSpec.Matcher.createInstance(this.expected[key], this.actual[key]);
+		if(!matcher.matches()) return this.makeExplainForItemMismatch(key);
+	}
+		
+	this.match = true;
+}
+JSSpec.ObjectMatcher.prototype.makeExplainForMissingItem = function(key) {
+	var sb = [];
+
+	sb.push('<p>actual value has no item named <strong>' + JSSpec.util.inspect(key) + '</strong></p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual, false, key) + '</p>');
+	sb.push('<p>but it should have the item whose value is <strong>' + JSSpec.util.inspect(this.expected[key]) + '</strong></p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, key) + '</p>');
+	
+	return sb.join("");
+}
+JSSpec.ObjectMatcher.prototype.makeExplainForUnknownItem = function(key) {
+	var sb = [];
+
+	sb.push('<p>actual value has item named <strong>' + JSSpec.util.inspect(key) + '</strong></p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual, false, key) + '</p>');
+	sb.push('<p>but there should be no such item</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, key) + '</p>');
+	
+	return sb.join("");
+}
+JSSpec.ObjectMatcher.prototype.makeExplainForItemMismatch = function(key) {
+	var sb = [];
+
+	sb.push('<p>actual value has an item named <strong>' + JSSpec.util.inspect(key) + '</strong> whose value is <strong>' + JSSpec.util.inspect(this.actual[key]) + '</strong></p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual, false, key) + '</p>');
+	sb.push('<p>but it\'s value should be <strong>' + JSSpec.util.inspect(this.expected[key]) + '</strong></p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, key) + '</p>');
+	
+	return sb.join("");
+}
+
+
+
+JSSpec.ArrayMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+	this.match = this.expected == this.actual;
+	this.explaination = this.makeExplain();
+}
+JSSpec.ArrayMatcher.prototype.matches = function() {return this.match}
+JSSpec.ArrayMatcher.prototype.explain = function() {return this.explaination}
+JSSpec.ArrayMatcher.prototype.makeExplain = function() {
+	if(this.expected.length != this.actual.length) return this.makeExplainForLengthMismatch();
+	
+	for(var i = 0; i < this.expected.length; i++) {
+		var matcher = JSSpec.Matcher.createInstance(this.expected[i], this.actual[i]);
+		if(!matcher.matches()) return this.makeExplainForItemMismatch(i);
+	}
+		
+	this.match = true;
+}
+JSSpec.ArrayMatcher.prototype.makeExplainForLengthMismatch = function() {
+	return JSSpec.Matcher.basicExplain(
+		this.expected,
+		this.actual,
+		'<p>but it should be <strong>' + this.expected.length + '</strong></p>',
+		'<p>actual value has <strong>' + this.actual.length + '</strong> items</p>'
+	);
+}
+JSSpec.ArrayMatcher.prototype.makeExplainForItemMismatch = function(index) {
+	var postfix = ["th", "st", "nd", "rd", "th"][(index + 1) % 10];
+
+	var sb = [];
+
+	sb.push('<p>' + (index + 1) + postfix + ' item (index ' + index + ') of actual value is <strong>' + JSSpec.util.inspect(this.actual[index]) + '</strong>:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual, false, index) + '</p>');
+	sb.push('<p>but it should be <strong>' + JSSpec.util.inspect(this.expected[index]) + '</strong>:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, index) + '</p>');
+	
+	return sb.join("");
+}
+
+
+JSSpec.NumberMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+}
+JSSpec.NumberMatcher.prototype.matches = function() {
+	if(this.expected == this.actual) return true;
+}
+JSSpec.NumberMatcher.prototype.explain = function() {
+	return JSSpec.Matcher.basicExplain(this.expected, this.actual);
+}
+
+
+
+JSSpec.StringMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+}
+JSSpec.StringMatcher.prototype.matches = function() {
+	if(this.expected == this.actual) return true;
+}
+JSSpec.StringMatcher.prototype.explain = function() {
+	var sb = [];
+
+	sb.push(JSSpec.Matcher.basicExplain(this.expected, this.actual));
+	sb.push(JSSpec.Matcher.diffExplain(this.expected, this.actual));	
 	return sb.join("");
 }
 
@@ -506,15 +672,15 @@ JSSpec.DSL.forAll = {
 		
 		return {
 			be: function(expected) {
-				var matcher = JSSpec.DSL.utils.compare(expected, self);
-				if(!matcher.isEqual()) {
+				var matcher = JSSpec.Matcher.createInstance(expected, self);
+				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
 			},
 			not_be: function(expected) {
-				var matcher = JSSpec.DSL.utils.compare(expected, self);
-				if(matcher.isEqual()) {
+				var matcher = JSSpec.Matcher.createInstance(expected, self);
+				if(matcher.matches()) {
 					JSSpec._assertionFailure = {message:"'" + self + "' should not be '" + expected + "'"};
 					throw JSSpec._assertionFailure;
 				}
@@ -526,13 +692,13 @@ JSSpec.DSL.forString = {
 	asHtml: function() {
 		var html = this;
 			
-		// 속성 따옴표 통일, 태그 이름 및 속성 부분 소문자로
+		// Uniformize quotation, turn tag names and attribute names into lower case
 		html = html.replace(/<(\/?)(\w+)([^>]*?)>/img, function(str, closingMark, tagName, attrs) {
-			var sortedAttrs = JSSpec.DSL.utils.sortHtmlAttrs(JSSpec.DSL.utils.correctHtmlAttrQuotation(attrs).toLowerCase())
+			var sortedAttrs = JSSpec.util.sortHtmlAttrs(JSSpec.util.correctHtmlAttrQuotation(attrs).toLowerCase())
 			return "<" + closingMark + tagName.toLowerCase() + sortedAttrs + ">"
 		})
 		
-		// 닫는 태그 validation
+		// validation self-closing tags
 		html = html.replace(/<br([^>]*?)>/mg, function(str, attrs) {
 			return "<br" + attrs + " />"
 		})
@@ -543,16 +709,16 @@ JSSpec.DSL.forString = {
 			return "<img" + attrs + " />"
 		})
 		
-		// style 뒤에 세미콜론 없으면 추가
+		// append semi-colon at the end of style value
 		html = html.replace(/style="(.*)"/mg, function(str, styleStr) {
 			if(styleStr.charAt(styleStr.length - 1) != ';') styleStr += ";"
 			return 'style="' + styleStr + '"'
 		})
 		
-		// 빈 style 제거
+		// remove empty style attributes
 		html = html.replace(/ style=";"/mg, "")
 		
-		// 줄바꿈 제거
+		// remove new-lines
 		html = html.replace(/\r/mg, '')
 		html = html.replace(/\n/mg, '')
 		html = html.replace(/(>[^<>]*?)\s+([^<>]*?<)/mg, '$1$2')
@@ -563,10 +729,7 @@ JSSpec.DSL.forString = {
 
 
 
-JSSpec.DSL.utils = {
-	compare: function(expected, actual) {
-		return new JSSpec.Matcher(expected, actual);
-	},
+JSSpec.util = {
 	correctHtmlAttrQuotation: function(html) {
 		html = html.replace(/(\w+)=['"]([^'"]+)['"]/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
 		html = html.replace(/(\w+)=([^ '"]+)/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
@@ -580,6 +743,45 @@ JSSpec.DSL.utils = {
 			attrs.push(matched);
 		})
 		return attrs.length == 0 ? "" : " " + attrs.sort().join(" ");
+	},
+	escapeHtml: function(str) {
+		if(!this._div) {
+			this._div = document.createElement("DIV");
+			this._text = document.createTextNode('');
+			this._div.appendChild(this._text);
+		}
+		this._text.data = str;
+		return this._div.innerHTML;
+	},
+	inspect: function(o, dontEscape, emphasisKey) {
+		if(typeof o == 'undefined') return '<span class="undefined_value">undefined</span>';
+		if(o == null) return '<span class="null_value">null</span>';
+		if(o._type == 'String') return '<span class="string_value">"' + (dontEscape ? o : JSSpec.util.escapeHtml(o)) + '"</span>';
+
+		if(o._type == 'Array') {
+			var sb = [];
+			for(var i = 0; i < o.length; i++) {
+				var inspected = JSSpec.util.inspect(o[i]);
+				sb.push(i == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
+			}
+			return '<span class="array_value">' + sb.join(', ') + '</span>';
+		}
+		
+		if(o._type == 'Date') {
+			return '<span class="date_value">"' + o.toString() + '"</span>';
+		}
+		
+		if(o._type == 'Number') return '<span class="number_value">' + (dontEscape ? o : JSSpec.util.escapeHtml(o)) + '</span>';
+
+		// object
+		var sb = [];
+		for(var key in o) {
+			if(key == 'should') continue;
+			
+			var inspected = JSSpec.util.inspect(key) + ":" + JSSpec.util.inspect(o[key]);
+			sb.push(key == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
+		}
+		return '<span class="object_value">' + sb.join(', ') + '</span>';
 	}
 }
 
@@ -597,6 +799,10 @@ for(var i = 0; i < targets.length; i++) {
 
 String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 
+$X = function(o) {
+	o.should = JSSpec.DSL.forAll.should;
+	return o;
+}
 
 
 // Main

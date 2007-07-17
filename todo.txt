@@ -1,9 +1,15 @@
 TODO:
- * Equality for Array, Date, Dictionary
+ * Matchers
+   * (V) Array
+   * (V) Date
+   * (V) Number
+   * (V) Object
+   * (V) String
+   * Null or Undefined
+   * Different type
+   * DOM element
+
  * More assertions:
-   * (V) should().be(expected)
-   * (V) should().not_be(expected)
-   
    * should().be_true
    * should().be_false
    
