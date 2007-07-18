@@ -65,7 +65,6 @@ JSSpec.Executor = function(target, onSuccess, onException) {
 				JSSpec._secondPass = true;
 				self.run();
 			} else {
-				ex.type = "error";
 				self.onException(self, ex);
 			}
 			
@@ -113,7 +112,6 @@ JSSpec.Executor.prototype.run = function() {
 						JSSpec._secondPass = true;
 						self.run();
 					} else {
-						ex.type = "error";
 						self.onException(self, ex);
 					}
 				}
@@ -212,7 +210,7 @@ JSSpec.Spec.prototype.getTotalErrors = function() {
 JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
 	var isTrue;
 	for(name in entries) {
-		var m = name.match(/\[\[([^]]+)\]\]/);
+		var m = name.match(/\[\[(.+)\]\]/);
 		if(m && m[1]) {
 			eval("isTrue = (" + m[1] + ")");
 			if(!isTrue) delete entries[name];
@@ -289,7 +287,7 @@ JSSpec.Example.prototype.isFailure = function() {
 	return this.exception && this.exception.type == "failure";
 }
 JSSpec.Example.prototype.isError = function() {
-	return this.exception && this.exception.type == "error";
+	return this.exception && !this.exception.type;
 }
 
 JSSpec.Example.prototype.getExecutor = function() {
@@ -842,7 +840,7 @@ JSSpec.DSL.forAll = {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
-			},
+			}
 		}
 	}
 }
@@ -869,9 +867,13 @@ JSSpec.DSL.forString = {
 		
 		// append semi-colon at the end of style value
 		html = html.replace(/style="(.*)"/mg, function(str, styleStr) {
+			styleStr = JSSpec.util.sortStyleEntries(styleStr.strip()); // for Safari
 			if(styleStr.charAt(styleStr.length - 1) != ';') styleStr += ";"
+			
 			return 'style="' + styleStr + '"'
 		})
+		
+		// sort style entries
 		
 		// remove empty style attributes
 		html = html.replace(/ style=";"/mg, "")
@@ -901,6 +903,10 @@ JSSpec.util = {
 			attrs.push(matched);
 		})
 		return attrs.length == 0 ? "" : " " + attrs.sort().join(" ");
+	},
+	sortStyleEntries: function(styleText) {
+		var entries = styleText.split(/; /);
+		return entries.sort().join("; ");
 	},
 	escapeHtml: function(str) {
 		if(!this._div) {
