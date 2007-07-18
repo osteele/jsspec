@@ -20,13 +20,22 @@ describe('"Should have"s', {
 		"Hello".should().have(4, "characters");
 	},
 	'Array length': function() {
-		[1,2,3].should().have(2, "items");
+		[1,2,3].should().have(4, "items");
 	},
 	'Object\'s item length': function() {
 		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
 	},
 	'No match': function() {
 		"This is a string".should().have(5, "players");
+	},
+	'Exactly': function() {
+		[1,2,3].should().have_exactly(2, "items");
+	},
+	'At least': function() {
+		[1,2,3].should().have_at_least(4, "items");
+	},
+	'At most': function() {
+		[1,2,3].should().have_at_most(2, "items");
 	}
 })
 describe('"Should be empty"s', {

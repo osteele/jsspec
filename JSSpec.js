@@ -7,6 +7,9 @@
  *
  * http://code.google.com/p/jsspec/
  *
+ * Dependencies:
+ *  - diff_match_patch.js ( http://code.google.com/p/diff_match_patch )
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -451,24 +454,36 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 
 
 // Property length Matcher
-JSSpec.PropertyLengthMatcher = function(num, property, o) {
+JSSpec.PropertyLengthMatcher = function(num, property, o, condition) {
 	this.num = num;
-	this.property = property;
 	this.o = o;
+	this.property = (this.o._type == 'String' || this.o._type == 'Array') ? 'length' : property;
+	this.condition = condition;
+	this.conditionMet = function(x) {
+		if(condition == 'exactly') return x.length == num;
+		if(condition == 'at least') return x.length >= num;
+		if(condition == 'at most') return x.length <= num;
+
+		throw "Unknown condition '" + condition + "'";
+	};
 	this.match = false;
 	this.explaination = this.makeExplain();
 }
 JSSpec.PropertyLengthMatcher.prototype.makeExplain = function() {
-	if(this.o._type == 'String' && this.property == 'characters' && this.o.length != this.num) {
-		return this.makeExplainForString();
-	} else if(typeof this.o.length != 'undefined' && this.property == "items" && this.o.length != this.num) {
-		return this.makeExplainForArray();
-	} else if(typeof this.o[this.property] != 'undefined' && this.o[this.property] != null && this.o[this.property].length != this.num) {
-		return this.makeExplainForObject();
-	} else {
+	if(this.o._type == 'String' && this.property == 'length') {
+		this.match = this.conditionMet(this.o);
+		return this.match ? '' : this.makeExplainForString();
+	} else if(typeof this.o.length != 'undefined' && this.property == "length") {
+		this.match = this.conditionMet(this.o);
+		return this.match ? '' : this.makeExplainForArray();
+	} else if(typeof this.o[this.property] != 'undefined' && this.o[this.property] != null) {
+		this.match = this.conditionMet(this.o[this.property]);
+		return this.match ? '' : this.makeExplainForObject();
+	} else if(typeof this.o[this.property] == 'undefined' || this.o[this.property] == null) {
+		this.match = false;
 		return this.makeExplainForNoProperty();
 	}
-	
+
 	this.match = true;
 }
 JSSpec.PropertyLengthMatcher.prototype.makeExplainForString = function() {
@@ -476,7 +491,7 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForString = function() {
 	
 	var exp = this.num == 0 ?
 		'be an <strong>empty string</strong>' :
-		'have <strong>' + this.num + ' characters</strong>';
+		'have <strong>' + this.condition + ' ' + this.num + ' characters</strong>';
 	
 	sb.push('<p>actual value has <strong>' + this.o.length + ' characters</strong>:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o) + '</p>');
@@ -489,7 +504,7 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForArray = function() {
 	
 	var exp = this.num == 0 ?
 		'be an <strong>empty array</strong>' :
-		'have <strong>' + this.num + ' items</strong>'
+		'have <strong>' + this.condition + ' ' + this.num + ' items</strong>';
 
 	sb.push('<p>actual value has <strong>' + this.o.length + ' items</strong>:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o) + '</p>');
@@ -502,7 +517,7 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForObject = function() {
 
 	var exp = this.num == 0 ?
 		'be <strong>empty</strong>' :
-		'have <strong>' + this.num + ' ' + this.property + '</strong>'
+		'have <strong>' + this.condition + ' ' + this.num + ' ' + this.property + '.</strong>';
 
 	sb.push('<p>actual value has <strong>' + this.o[this.property].length + ' ' + this.property + '</strong>:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o, false, this.property) + '</p>');
@@ -515,7 +530,7 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForNoProperty = function() {
 	
 	sb.push('<p>actual value:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.o) + '</p>');
-	sb.push('<p>should have <strong>' + this.num + ' ' + this.property + '</strong> but there\'s no such property.</p>');
+	sb.push('<p>should have <strong>' + this.condition + ' ' + this.num + ' ' + this.property + '</strong> but there\'s no such property.</p>');
 	
 	return sb.join("");
 }
@@ -526,8 +541,8 @@ JSSpec.PropertyLengthMatcher.prototype.explain = function() {
 	return this.explaination;
 }
 
-JSSpec.PropertyLengthMatcher.createInstance = function(num, property, o) {
-	return new JSSpec.PropertyLengthMatcher(num, property, o);
+JSSpec.PropertyLengthMatcher.createInstance = function(num, property, o, condition) {
+	return new JSSpec.PropertyLengthMatcher(num, property, o, condition);
 }
 
 
@@ -805,15 +820,29 @@ JSSpec.DSL.forAll = {
 				this.be(false);
 			},
 			have: function(num, property) {
-				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self);
+				this.have_exactly(num, property);
+			},
+			have_exactly: function(num, property) {
+				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, "exactly");
 				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
 			},
-			have_exactly: function(num, property) {
-				this.have(num, property);
-			}
+			have_at_least: function(num, property) {
+				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, "at least");
+				if(!matcher.matches()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
+					throw JSSpec._assertionFailure;
+				}
+			},
+			have_at_most: function(num, property) {
+				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, "at most");
+				if(!matcher.matches()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
+					throw JSSpec._assertionFailure;
+				}
+			},
 		}
 	}
 }
