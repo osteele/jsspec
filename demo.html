@@ -23,7 +23,7 @@ describe('"Should have"s', {
 		[1,2,3].should().have(2, "items");
 	},
 	'Object\'s item length': function() {
-		$X({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
 	},
 	'No match': function() {
 		"This is a string".should().have(5, "players");
@@ -37,7 +37,7 @@ describe('"Should be empty"s', {
 		[1,2,3].should().be_empty();
 	},
 	'Object\'s item': function() {
-		$X({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(0, "accounts");
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(0, "accounts");
 	}
 })
 describe('"Should be"s', {
@@ -56,6 +56,15 @@ describe('"Should be"s', {
 	'Null value': function() {
 		"Test".should().be(null);
 	},
+	'Boolean value 1': function() {
+		(true).should().be(false);
+	},
+	'Boolean value 2': function() {
+		(false).should().be_true();
+	},
+	'Boolean value 3': function() {
+		(true).should().be_false();
+	},
 	'Number mismatch': function() {
 		(1+2).should().be(4);
 	},
@@ -66,19 +75,19 @@ describe('"Should be"s', {
 		var actual = {a:1, b:2};
 		var expected = {a:1, b:2, d:3};
 		
-		$X(actual).should().be(expected);
+		expect(actual).should().be(expected);
 	},
 	'Object mismatch 2': function() {
 		var actual = {a:1, b:2, c:3, d:4};
 		var expected = {a:1, b:2, c:3};
 		
-		$X(actual).should().be(expected);
+		expect(actual).should().be(expected);
 	},
 	'Object mismatch 3': function() {
 		var actual = {a:1, b:4, c:3};
 		var expected = {a:1, b:2, c:3};
 		
-		$X(actual).should().be(expected);
+		expect(actual).should().be(expected);
 	}
 })
 // ]]></script>

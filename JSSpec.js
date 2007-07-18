@@ -547,6 +547,8 @@ JSSpec.EqualityMatcher.createInstance = function(expected, actual) {
 			return new JSSpec.NumberEqualityMatcher(expected, actual);
 		} else if(expected._type == "Array") {
 			return new JSSpec.ArrayEqualityMatcher(expected, actual);
+		} else if(expected._type == "Boolean") {
+			return new JSSpec.BooleanEqualityMatcher(expected, actual);
 		}
 	}
 	
@@ -578,6 +580,28 @@ JSSpec.EqualityMatcher.diffExplain = function(expected, actual) {
 	
 	return sb.join("");
 }
+
+
+
+JSSpec.BooleanEqualityMatcher = function(expected, actual) {
+	this.expected = expected;
+	this.actual = actual;
+}
+JSSpec.BooleanEqualityMatcher.prototype.explain = function() {
+	var sb = [];
+	
+	sb.push('<p>actual value:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
+	sb.push('<p>should be:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
+	
+	return sb.join("");
+}
+JSSpec.BooleanEqualityMatcher.prototype.matches = function() {
+	return this.expected == this.actual;
+}
+
+
 
 JSSpec.NullEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
@@ -746,6 +770,10 @@ JSSpec.DSL = {};
 JSSpec.DSL.describe = function(context, entries) {
 	JSSpec.specs.push(new JSSpec.Spec(context, entries));
 }
+JSSpec.DSL.expect = function(subject) {
+	subject.should = JSSpec.DSL.forAll.should;
+	return subject;
+}
 JSSpec.DSL.forAll = {
 	should:function() {
 		if(JSSpec._secondPass) return {}
@@ -770,12 +798,21 @@ JSSpec.DSL.forAll = {
 			be_empty: function() {
 				this.have(0, self._type == 'String' ? 'characters' : 'items');
 			},
+			be_true: function() {
+				this.be(true);
+			},
+			be_false: function() {
+				this.be(false);
+			},
 			have: function(num, property) {
 				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self);
 				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
+			},
+			have_exactly: function(num, property) {
+				this.have(num, property);
 			}
 		}
 	}
@@ -864,6 +901,8 @@ JSSpec.util = {
 		}
 		
 		if(o._type == 'Number') return '<span class="number_value">' + (dontEscape ? o : JSSpec.util.escapeHtml(o)) + '</span>';
+		
+		if(o._type == 'Boolean') return '<span class="boolean_value">' + o + '</span>';
 
 		// object
 		var sb = [];
@@ -878,23 +917,21 @@ JSSpec.util = {
 }
 
 describe = JSSpec.DSL.describe;
+expect = JSSpec.DSL.expect;
 
 String.prototype._type = "String";
 Number.prototype._type = "Number";
 Date.prototype._type = "Date";
 Array.prototype._type = "Array";
+Boolean.prototype._type = "Boolean";
 
-var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype];
+var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype, Boolean.prototype];
 for(var i = 0; i < targets.length; i++) {
 	targets[i].should = JSSpec.DSL.forAll.should;
 }
 
 String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 
-$X = function(o) {
-	o.should = JSSpec.DSL.forAll.should;
-	return o;
-}
 
 
 // Main
