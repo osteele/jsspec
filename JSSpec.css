@@ -74,8 +74,6 @@ li.exception {
 	line-height: 2em;
 	padding: 0.1em 0.2em;
 	margin: 0.1em 0;
-	border: 1px dashed #FF8B63;
-	border-left-style: dashed;
 }
 .date_value {
 	font-family: monospace;
