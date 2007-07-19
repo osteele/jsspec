@@ -5,7 +5,7 @@
  *  - mailto:jania902@gmail.com
  *  - http://jania.pe.kr
  *
- * http://code.google.com/p/jsspec/
+ * http://jania.pe.kr/aw/moin.cgi/JSSpec
  *
  * Dependencies:
  *  - diff_match_patch.js ( http://code.google.com/p/diff_match_patch )
