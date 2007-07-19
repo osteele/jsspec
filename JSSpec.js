@@ -843,6 +843,47 @@ JSSpec.StringEqualityMatcher.prototype.explain = function() {
 
 
 
+JSSpec.PatternMatcher = function(actual, pattern, condition) {
+	this.actual = actual;
+	this.pattern = pattern;
+	this.condition = condition;
+	this.match = false;
+	this.explaination = this.makeExplain();
+}
+JSSpec.PatternMatcher.createInstance = function(actual, pattern, condition) {
+	return new JSSpec.PatternMatcher(actual, pattern, condition);
+}
+JSSpec.PatternMatcher.prototype.makeExplain = function() {
+	if(this.actual == null || this.actual._type != 'String') {
+		var sb = [];
+		sb.push('<p>actual value:</p>');
+		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
+		sb.push('<p>should ' + (this.condition ? '' : 'not') + ' match with pattern:</p>');
+		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.pattern) + '</p>');
+		sb.push('<p>but pattern matching cannot be performed.</p>');
+		return sb.join("");
+	} else {
+		this.match = this.condition == !!this.actual.match(this.pattern);
+		if(this.match) return "";
+		
+		var sb = [];
+		sb.push('<p>actual value:</p>');
+		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
+		sb.push('<p>should ' + (this.condition ? '' : 'not') + ' match with pattern:</p>');
+		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.pattern) + '</p>');
+		return sb.join("");
+	}
+	
+}
+JSSpec.PatternMatcher.prototype.matches = function() {
+	return this.match;
+}
+JSSpec.PatternMatcher.prototype.explain = function() {
+	return this.explaination;
+}
+
+
+
 // Domain Specific Languages
 JSSpec.DSL = {};
 JSSpec.DSL.describe = function(context, entries) {
@@ -910,6 +951,20 @@ JSSpec.DSL.forAll = {
 			},
 			not_include: function(expected) {
 				var matcher = JSSpec.IncludeMatcher.createInstance(self, expected, false);
+				if(!matcher.matches()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
+					throw JSSpec._assertionFailure;
+				}
+			},
+			match: function(pattern) {
+				var matcher = JSSpec.PatternMatcher.createInstance(self, pattern, true);
+				if(!matcher.matches()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
+					throw JSSpec._assertionFailure;
+				}
+			},
+			not_match: function(pattern) {
+				var matcher = JSSpec.PatternMatcher.createInstance(self, pattern, false);
 				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
@@ -1013,6 +1068,8 @@ JSSpec.util = {
 		
 		if(o._type == 'Boolean') return '<span class="boolean_value">' + o + '</span>';
 
+		if(o._type == 'RegExp') return '<span class="regexp_value">' + o + '</span>';
+
 		// object
 		var sb = [];
 		for(var key in o) {
@@ -1033,8 +1090,9 @@ Number.prototype._type = "Number";
 Date.prototype._type = "Date";
 Array.prototype._type = "Array";
 Boolean.prototype._type = "Boolean";
+RegExp.prototype._type = "RegExp";
 
-var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype, Boolean.prototype];
+var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype, Boolean.prototype, RegExp.prototype];
 for(var i = 0; i < targets.length; i++) {
 	targets[i].should = JSSpec.DSL.forAll.should;
 }

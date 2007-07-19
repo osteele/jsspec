@@ -16,6 +16,23 @@ describe('Plus operator (just for example)', {
 	}
 })
 
+describe('"Should match"s', {
+	'Should match': function() {
+		"Hello".should().match(/ell/);
+	},
+	'Should match 1': function() {
+		"Hello".should().match(/x/);
+	},
+	'Should match 2': function() {
+		[1,2,3].should().match(/x/);
+	},
+	'Should not match 1': function() {
+		"Hello".should().not_match(/ell/);
+	},
+	'Should not match 2': function() {
+		[1,2,3].should().not_match(/x/);
+	}
+})
 describe('"Should include"s', {
 	'Should include': function() {
 		[1,2,3].should().include(4);

@@ -66,7 +66,7 @@ li.exception {
 
 
 
-.number_value, .string_value, .boolean_value {
+.number_value, .string_value, .boolean_value, .regexp_value {
 	font-family: monospace;
 	color: blue;
 }
