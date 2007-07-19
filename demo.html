@@ -15,6 +15,22 @@ describe('Plus operator (just for example)', {
 		(1 + 2).should().be(3);
 	}
 })
+
+describe('"Should include"s', {
+	'Should include': function() {
+		[1,2,3].should().include(4);
+	},
+	'Should not include': function() {
+		[1,2,3].should().not_include(2);
+	},
+	'Should include / Non-array object': function() {
+		new Date().should().include(4);
+	},
+	'Should not include / Non-array object': function() {
+		new Date().should().not_include(4);
+	}
+})
+
 describe('"Should have"s', {
 	'String length': function() {
 		"Hello".should().have(4, "characters");

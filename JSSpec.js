@@ -451,6 +451,71 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 
 
 
+// Include Matcher
+JSSpec.IncludeMatcher = function(actual, expected, condition) {
+	this.actual = actual;
+	this.expected = expected;
+	this.condition = condition;
+	this.match = false;
+	this.explaination = this.makeExplain();
+}
+JSSpec.IncludeMatcher.createInstance = function(actual, expected, condition) {
+	return new JSSpec.IncludeMatcher(actual, expected, condition);
+}
+JSSpec.IncludeMatcher.prototype.matches = function() {
+	return this.match;
+}
+JSSpec.IncludeMatcher.prototype.explain = function() {
+	return this.explaination;
+}
+JSSpec.IncludeMatcher.prototype.makeExplain = function() {
+	if(typeof this.actual.length == 'undefined') {
+		return this.makeExplainForNotArray();
+	} else {
+		return this.makeExplainForArray();
+	}
+}
+JSSpec.IncludeMatcher.prototype.makeExplainForNotArray = function() {
+	var sb = [];
+	sb.push('<p>actual value:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
+	sb.push('<p>should ' + (this.condition ? '' : 'not') + ' include:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
+	sb.push('<p>but since it\s not an array, include or not doesn\'t make any sense.</p>');
+	return sb.join("");
+}
+JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
+	if(this.condition) {
+		for(var i = 0; i < this.actual.length; i++) {
+			var matches = JSSpec.EqualityMatcher.createInstance(this.expected, this.actual[i]).matches();
+			if(matches) {
+				this.match = true;
+				break;
+			}
+		}
+	} else {
+		for(var i = 0; i < this.actual.length; i++) {
+			var matches = JSSpec.EqualityMatcher.createInstance(this.expected, this.actual[i]).matches();
+			if(matches) {
+				this.match = false;
+				break;
+			}
+		}
+	}
+	
+	if(this.match) return "";
+	
+	var sb = [];
+	sb.push('<p>actual value:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual, false, this.condition ? null : i) + '</p>');
+	sb.push('<p>should ' + (this.condition ? '' : 'not') + ' include:</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
+	return sb.join("");
+}
+
+
+
+
 // Property length Matcher
 JSSpec.PropertyLengthMatcher = function(num, property, o, condition) {
 	this.num = num;
@@ -817,25 +882,34 @@ JSSpec.DSL.forAll = {
 			be_false: function() {
 				this.be(false);
 			},
+			_have: function(num, property, condition) {
+				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, condition);
+				if(!matcher.matches()) {
+					JSSpec._assertionFailure = {message:matcher.explain()};
+					throw JSSpec._assertionFailure;
+				}
+			},
 			have: function(num, property) {
-				this.have_exactly(num, property);
+				this._have(num, property, "exactly");
 			},
 			have_exactly: function(num, property) {
-				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, "exactly");
-				if(!matcher.matches()) {
-					JSSpec._assertionFailure = {message:matcher.explain()};
-					throw JSSpec._assertionFailure;
-				}
+				this._have(num, property, "exactly");
 			},
 			have_at_least: function(num, property) {
-				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, "at least");
+				this._have(num, property, "at least");
+			},
+			have_at_most: function(num, property) {
+				this._have(num, property, "at most");
+			},
+			include: function(expected) {
+				var matcher = JSSpec.IncludeMatcher.createInstance(self, expected, true);
 				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
 				}
 			},
-			have_at_most: function(num, property) {
-				var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, self, "at most");
+			not_include: function(expected) {
+				var matcher = JSSpec.IncludeMatcher.createInstance(self, expected, false);
 				if(!matcher.matches()) {
 					JSSpec._assertionFailure = {message:matcher.explain()};
 					throw JSSpec._assertionFailure;
