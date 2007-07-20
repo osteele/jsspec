@@ -698,7 +698,9 @@ JSSpec.DateEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
 }
-JSSpec.DateEqualityMatcher.prototype.matches = function() {return this.expected == this.actual}
+JSSpec.DateEqualityMatcher.prototype.matches = function() {
+	return this.expected.getTime() == this.actual.getTime();
+}
 JSSpec.DateEqualityMatcher.prototype.explain = function() {
 	var sb = [];
 	

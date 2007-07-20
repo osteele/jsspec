@@ -16,6 +16,14 @@ describe('Plus operator (just for example)', {
 	}
 })
 
+describe('Equality operator', {
+	'should work for different Date instances which have same value': function() {
+		var date1 = new Date(1979, 03, 27);
+		var date2 = new Date(1979, 03, 27);
+		(date1).should().be(date2);
+	}
+})
+
 describe('"Should match"s', {
 	'Should match': function() {
 		"Hello".should().match(/ell/);
