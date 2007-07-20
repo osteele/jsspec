@@ -16,11 +16,21 @@ describe('Plus operator (just for example)', {
 	}
 })
 
-describe('Equality operator', {
-	'should work for different Date instances which have same value': function() {
-		var date1 = new Date(1979, 03, 27);
-		var date2 = new Date(1979, 03, 27);
-		(date1).should().be(date2);
+describe('Failure messages', {
+	'Should be (String)': function() {
+		"Hello world".should().be("Good-bye world");
+	},
+	'Should have (Object\s item)': function() {
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
+	},
+	'Should have at least': function() {
+		[1,2,3].should().have_at_least(4, "items");
+	},
+	'Should include': function() {
+		[1,2,3].should().include(4);
+	},
+	'Should match': function() {
+		"Hello".should().match(/bye/);
 	}
 })
 
@@ -140,7 +150,15 @@ describe('"Should be"s', {
 		expect(actual).should().be(expected);
 	}
 })
+
+describe('Equality operator', {
+	'should work for different Date instances which have same value': function() {
+		var date1 = new Date(1979, 03, 27);
+		var date2 = new Date(1979, 03, 27);
+		(date1).should().be(date2);
+	}
+})
 // ]]></script>
 </head>
-<body></body>
+<body><div style="display:none;"><p>A</p><p>B</p></div></body>
 </html>
