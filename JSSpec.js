@@ -721,6 +721,16 @@ JSSpec.ObjectEqualityMatcher = function(expected, actual) {
 JSSpec.ObjectEqualityMatcher.prototype.matches = function() {return this.match}
 JSSpec.ObjectEqualityMatcher.prototype.explain = function() {return this.explaination}
 JSSpec.ObjectEqualityMatcher.prototype.makeExplain = function() {
+	
+	if(this.expected == this.actual) {
+		this.match = true;
+		return "";
+	}
+	
+	if(JSSpec.util.isDomNode(this.expected)) {
+		return this.makeExplainForDomNode();
+	}
+	
 	for(var key in this.expected) {
 		if(key == "should") continue;
 		var expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
@@ -741,6 +751,14 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplain = function() {
 	}
 		
 	this.match = true;
+}
+JSSpec.ObjectEqualityMatcher.prototype.makeExplainForDomNode = function(key) {
+	var sb = [];
+	
+	sb.push(JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual));
+//	sb.push(JSSpec.EqualityMatcher.diffExplain(this.expected.toString(), this.actual.toString()));
+	
+	return sb.join("");
 }
 JSSpec.ObjectEqualityMatcher.prototype.makeExplainForMissingItem = function(key) {
 	var sb = [];
@@ -1048,6 +1066,52 @@ JSSpec.util = {
 		this._text.data = str;
 		return this._div.innerHTML;
 	},
+	isDomNode: function(o) {
+		// TODO: make it more stricter
+		return (typeof o.nodeName == 'string') && (typeof o.nodeType == 'number');
+	},
+	inspectDomPath: function(o) {
+		var sb = [];
+		while(o && o.nodeName != '#document') {
+			var siblings = o.parentNode.childNodes;
+			for(var i = 0; i < siblings.length; i++) {
+				if(siblings[i] == o) {
+					sb.push(o.nodeName + (i == 0 ? '' : '[' + i + ']'));
+					break;
+				}
+			}
+			o = o.parentNode;
+		}
+		return sb.join(" &gt; ");
+	},
+	inspectDomNode: function(o) {
+		if(o.nodeType == 1) {
+			var sb = [];
+			sb.push('<span class="dom_value">');
+			sb.push("&lt;");
+			sb.push(o.nodeName);
+			
+			var attrs = o.attributes;
+			for(var i = 0; i < attrs.length; i++) {
+				if(
+					attrs[i].nodeValue &&
+					attrs[i].nodeName != 'contentEditable' &&
+					attrs[i].nodeName != 'style' &&
+					typeof attrs[i].nodeValue != 'function'
+				) sb.push(' <span class="dom_attr_name">' + attrs[i].nodeName + '</span>=<span class="dom_attr_value">"' + attrs[i].nodeValue + '"</span>');
+			}
+			if(o.style && o.style.cssText) {
+				sb.push(' <span class="dom_attr_name">style</span>=<span class="dom_attr_value">"' + o.style.cssText + '"</span>');
+			}
+			sb.push('&gt; <span class="dom_path">(' + JSSpec.util.inspectDomPath(o) + ')</span>' );
+			sb.push('</span>');
+			return sb.join("");
+		} else if(o.nodeType == 3) {
+			return '<span class="dom_value">#text ' + o.nodeValue + '</span>';
+		} else {
+			return '<span class="dom_value">UnknownDomNode</span>';
+		}
+	},
 	inspect: function(o, dontEscape, emphasisKey) {
 		if(typeof o == 'undefined') return '<span class="undefined_value">undefined</span>';
 		if(o == null) return '<span class="null_value">null</span>';
@@ -1072,6 +1136,8 @@ JSSpec.util = {
 
 		if(o._type == 'RegExp') return '<span class="regexp_value">' + o + '</span>';
 
+		if(JSSpec.util.isDomNode(o)) return JSSpec.util.inspectDomNode(o);
+		
 		// object
 		var sb = [];
 		for(var key in o) {
