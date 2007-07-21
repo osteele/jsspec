@@ -9,145 +9,145 @@
 <script type="text/javascript">// <![CDATA[
 describe('Plus operator (just for example)', {
 	'should concatenate two strings': function() {
-		("Hello " + "World").should().be("Hello World");
+		expect("Hello " + "World").should_be("Hello World");
 	},
 	'should add two numbers': function() {
-		(1 + 2).should().be(3);
+		expect(1 + 2).should_be(3);
 	}
 })
 
 describe('Failure messages', {
 	'Should be (String)': function() {
-		"Hello world".should().be("Good-bye world");
+		expect("Hello World").should_be("Good-bye world");
 	},
 	'Should have (Object\s item)': function() {
-		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should_have(3, "accounts");
 	},
 	'Should have at least': function() {
-		[1,2,3].should().have_at_least(4, "items");
+		expect([1,2,3]).should_have_at_least(4, "items");
 	},
 	'Should include': function() {
-		[1,2,3].should().include(4);
+		expect([1,2,3]).should_include(4);
 	},
 	'Should match': function() {
-		"Hello".should().match(/bye/);
+		expect("Hello").should_match(/bye/);
 	}
 })
 
 describe('"Should match"s', {
 	'Should match': function() {
-		"Hello".should().match(/ell/);
+		expect("Hello").should_match(/ell/);
 	},
 	'Should match 1': function() {
-		"Hello".should().match(/x/);
+		expect("Hello").should_match(/x/);
 	},
 	'Should match 2': function() {
-		[1,2,3].should().match(/x/);
+		expect([1,2,3]).should_match(/x/);
 	},
 	'Should not match 1': function() {
-		"Hello".should().not_match(/ell/);
+		expect("Hello").should_not_match(/ell/);
 	},
 	'Should not match 2': function() {
-		[1,2,3].should().not_match(/x/);
+		expect([1,2,3]).should_not_match(/x/);
 	}
 })
 describe('"Should include"s', {
 	'Should include': function() {
-		[1,2,3].should().include(4);
+		expect([1,2,3]).should_include(4);
 	},
 	'Should not include': function() {
-		[1,2,3].should().not_include(2);
+		expect([1,2,3]).should_not_include(2);
 	},
 	'Should include / Non-array object': function() {
-		new Date().should().include(4);
+		expect(new Date()).should_include(4);
 	},
 	'Should not include / Non-array object': function() {
-		new Date().should().not_include(4);
+		expect(new Date()).should_not_include(4);
 	}
 })
 
 describe('"Should have"s', {
 	'String length': function() {
-		"Hello".should().have(4, "characters");
+		expect("Hello").should_have(4, "characters");
 	},
 	'Array length': function() {
-		[1,2,3].should().have(4, "items");
+		expect([1,2,3]).should_have(4, "items");
 	},
 	'Object\'s item length': function() {
-		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(3, "accounts");
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should_have(3, "accounts");
 	},
 	'No match': function() {
-		"This is a string".should().have(5, "players");
+		expect("This is a string").should_have(5, "players");
 	},
 	'Exactly': function() {
-		[1,2,3].should().have_exactly(2, "items");
+		expect([1,2,3]).should_have_exactly(2, "items");
 	},
 	'At least': function() {
-		[1,2,3].should().have_at_least(4, "items");
+		expect([1,2,3]).should_have_at_least(4, "items");
 	},
 	'At most': function() {
-		[1,2,3].should().have_at_most(2, "items");
+		expect([1,2,3]).should_have_at_most(2, "items");
 	}
 })
 describe('"Should be empty"s', {
 	'String': function() {
-		"Hello".should().be_empty();
+		expect("Hello").should_be_empty();
 	},
 	'Array': function() {
-		[1,2,3].should().be_empty();
+		expect([1,2,3]).should_be_empty();
 	},
 	'Object\'s item': function() {
-		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should().have(0, "accounts");
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should_have(0, "accounts");
 	}
 })
 describe('"Should be"s', {
 	'String mismatch': function() {
-		"Hello world".should().be("Good-bye world");
+		expect("Hello world").should_be("Good-bye world");
 	},
 	'Array item mismatch': function() {
-		['ab','cd','ef'].should().be(['ab','bd','ef']);
+		expect(['ab','cd','ef']).should_be(['ab','bd','ef']);
 	},
 	'Array length mismatch': function() {
-		['a',2,'4',5].should().be([1,2,[4,5,6],6,7]);
+		expect(['a',2,'4',5]).should_be([1,2,[4,5,6],6,7]);
 	},
 	'Undefined value': function() {
-		"Test".should().be(undefined);
+		expect("Test").should_be(undefined);
 	},
 	'Null value': function() {
-		"Test".should().be(null);
+		expect(null).should_be("Test");
 	},
 	'Boolean value 1': function() {
-		(true).should().be(false);
+		expect(true).should_be(false);
 	},
 	'Boolean value 2': function() {
-		(false).should().be_true();
+		expect(false).should_be_true();
 	},
 	'Boolean value 3': function() {
-		(true).should().be_false();
+		expect(true).should_be_false();
 	},
 	'Number mismatch': function() {
-		(1+2).should().be(4);
+		expect(1+2).should_be(4);
 	},
 	'Date mismatch': function() {
-		new Date(1979, 3, 27).should().be(new Date(1976, 7, 23));
+		expect(new Date(1979, 3, 27)).should_be(new Date(1976, 7, 23));
 	},
 	'Object mismatch 1': function() {
 		var actual = {a:1, b:2};
 		var expected = {a:1, b:2, d:3};
 		
-		expect(actual).should().be(expected);
+		expect(actual).should_be(expected);
 	},
 	'Object mismatch 2': function() {
 		var actual = {a:1, b:2, c:3, d:4};
 		var expected = {a:1, b:2, c:3};
 		
-		expect(actual).should().be(expected);
+		expect(actual).should_be(expected);
 	},
 	'Object mismatch 3': function() {
 		var actual = {a:1, b:4, c:3};
 		var expected = {a:1, b:2, c:3};
 		
-		expect(actual).should().be(expected);
+		expect(actual).should_be(expected);
 	}
 })
 
@@ -155,7 +155,7 @@ describe('Equality operator', {
 	'should work for different Date instances which have same value': function() {
 		var date1 = new Date(1979, 03, 27);
 		var date2 = new Date(1979, 03, 27);
-		(date1).should().be(date2);
+		expect(date1).should_be(date2);
 	}
 })
 // ]]></script>
