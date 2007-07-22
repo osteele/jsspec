@@ -100,12 +100,6 @@ ul.specs li {
 	margin-bottom: 0.1em;
 }
 
-#list ul.specs li {
-	border-style: solid;
-	border-width: 1px 1px 1px 5px;
-	margin: 0.2em 0em;
-}
-
 /* spec title */
 ul.specs li h3 {
 	font-weight: bold;
@@ -139,7 +133,6 @@ ul.specs li h3, ul.specs li h3 a {
 	background-color: #C0C0C0;
 }
 
-#list ul.specs li h3
 ul.examples li, ul.examples li a {
 	color: black;
 	background-color: #E0E0E0;
