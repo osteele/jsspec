@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+<title>Spec 1</title>
+<link rel="stylesheet" type="text/css" href="../JSSpec.css" />
+<script type="text/javascript" src="../diff_match_patch.js"></script>
+<script type="text/javascript" src="../JSSpec.js"></script>
+<script type="text/javascript">// <![CDATA[
+describe('Spec 1-1', {
+	'Example 1': function() {
+		expect("Hello " + "World").should_be("Hello World");
+	},
+	'Example 2': function() {
+		expect("Hello").should_be("World");
+	},
+	'Example 3': function() {
+		expect(1 + 2).should_be(3);
+	}
+})
+
+describe('Spec 1-2', {
+	'Example 4': function() {
+		expect(1 + 2).should_be(3);
+	}
+})
+// ]]></script>
+</head>
+<body><div style="display:none;"><p>A</p><p>B</p></div></body>
+</html>
