@@ -127,18 +127,7 @@ ul.examples li div {
 	font-size: 0.75em;
 }
 
-/* styles for waiting, ongoing, success, failure, error */
-ul.specs li h3, ul.specs li h3 a {
-	color: black;
-	background-color: #C0C0C0;
-}
-
-ul.examples li, ul.examples li a {
-	color: black;
-	background-color: #E0E0E0;
-	border-color: #A0A0A0;
-}
-
+/* styles for ongoing, success, failure, error */
 div.success, div.success a {
 	color: #FFFFFF;
 	background-color: #65C400;
