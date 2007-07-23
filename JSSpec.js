@@ -25,31 +25,34 @@
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-// defining namespace
+/**
+ * Namespace
+ */
 JSSpec = {
-	specs: []
+	specs: [],
+	
+	EMPTY_FUNCTION: function() {},
+	
+	Browser: {
+		Trident: navigator.appName == "Microsoft Internet Explorer",
+		Webkit: navigator.userAgent.indexOf('AppleWebKit/') > -1,
+		Gecko: navigator.userAgent.indexOf('Gecko') > -1 && navigator.userAgent.indexOf('KHTML') == -1,
+		Presto: navigator.appName == "Opera"
+	}
 }
 
 
-JSSpec.EMPTY_FUNCTION = function() {};
 
-// Browser detection code
-JSSpec.Browser = {
-	Trident: navigator.appName == "Microsoft Internet Explorer",
-	Webkit: navigator.userAgent.indexOf('AppleWebKit/') > -1,
-	Gecko: navigator.userAgent.indexOf('Gecko') > -1 && navigator.userAgent.indexOf('KHTML') == -1,
-	Presto: navigator.appName == "Opera"
-}
-
-
-
-// Exception handler for Trident. It helps to collect exact line number where exception occured.
+/**
+ * Executor
+ */
 JSSpec.Executor = function(target, onSuccess, onException) {
 	this.target = target;
 	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : JSSpec.EMPTY_FUNCTION;
 	this.onException = typeof onException == 'function' ? onException : JSSpec.EMPTY_FUNCTION;
 	
 	if(JSSpec.Browser.Trident) {
+		// Exception handler for Trident. It helps to collect exact line number where exception occured.
 		window.onerror = function(message, fileName, lineNumber) {
 			var self = window._curExecutor;
 			var ex = {message:message, fileName:fileName, lineNumber:lineNumber};
@@ -123,7 +126,9 @@ JSSpec.Executor.prototype.run = function() {
 
 
 
-// CompositeExecutor composites one or more executors and execute them sequencially.
+/**
+ * CompositeExecutor composites one or more executors and execute them sequencially.
+ */
 JSSpec.CompositeExecutor = function(onSuccess, onException, continueOnException) {
 	this.queue = [];
 	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : JSSpec.EMPTY_FUNCTION;
@@ -174,7 +179,9 @@ JSSpec.CompositeExecutor.prototype.run = function() {
 
 
 
-// Spec is a set of Examples in a specific context
+/**
+ * Spec is a set of Examples in a specific context
+ */
 JSSpec.Spec = function(context, entries) {
 	this.id = JSSpec.Spec.id++;
 	this.context = context;
@@ -206,7 +213,6 @@ JSSpec.Spec.prototype.getTotalErrors = function() {
 	}
 	return errors;
 }
-
 JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
 	var isTrue;
 	for(name in entries) {
@@ -273,8 +279,9 @@ JSSpec.Spec.prototype.getExecutor = function() {
 
 
 
-
-// Example
+/**
+ * Example
+ */
 JSSpec.Example = function(name, target, before, after) {
 	this.id = JSSpec.Example.id++;
 	this.name = name;
@@ -289,7 +296,6 @@ JSSpec.Example.prototype.isFailure = function() {
 JSSpec.Example.prototype.isError = function() {
 	return this.exception && !this.exception.type;
 }
-
 JSSpec.Example.prototype.getExecutor = function() {
 	var self = this;
 	var onException = function(executor, ex) {
@@ -315,6 +321,10 @@ JSSpec.Example.prototype.getExecutor = function() {
 }
 
 
+
+/**
+ * Runner
+ */
 JSSpec.Runner = function(specs, logger) {
 	JSSpec.log = logger;
 	this.specs = specs;
@@ -353,7 +363,9 @@ JSSpec.Runner.prototype.run = function() {
 
 
 
-// Logger
+/**
+ * Logger
+ */
 JSSpec.Logger = function() {}
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
@@ -453,7 +465,9 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 
 
 
-// Include Matcher
+/**
+ * IncludeMatcher
+ */
 JSSpec.IncludeMatcher = function(actual, expected, condition) {
 	this.actual = actual;
 	this.expected = expected;
@@ -518,7 +532,9 @@ JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
 
 
 
-// Property length Matcher
+/**
+ * PropertyLengthMatcher
+ */
 JSSpec.PropertyLengthMatcher = function(num, property, o, condition) {
 	this.num = num;
 	this.o = o;
@@ -609,16 +625,16 @@ JSSpec.PropertyLengthMatcher.prototype.matches = function() {
 JSSpec.PropertyLengthMatcher.prototype.explain = function() {
 	return this.explaination;
 }
-
 JSSpec.PropertyLengthMatcher.createInstance = function(num, property, o, condition) {
 	return new JSSpec.PropertyLengthMatcher(num, property, o, condition);
 }
 
 
 
-// Equality Matcher
+/**
+ * EqualityMatcher
+ */
 JSSpec.EqualityMatcher = {}
-
 JSSpec.EqualityMatcher.createInstance = function(expected, actual) {
 	if(expected == null || actual == null) {
 		return new JSSpec.NullEqualityMatcher(expected, actual);
@@ -667,6 +683,9 @@ JSSpec.EqualityMatcher.diffExplain = function(expected, actual) {
 
 
 
+/**
+ * BooleanEqualityMatcher
+ */
 JSSpec.BooleanEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
@@ -687,6 +706,9 @@ JSSpec.BooleanEqualityMatcher.prototype.matches = function() {
 
 
 
+/**
+ * NullEqualityMatcher
+ */
 JSSpec.NullEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
@@ -718,6 +740,9 @@ JSSpec.DateEqualityMatcher.prototype.explain = function() {
 
 
 
+/**
+ * ObjectEqualityMatcher
+ */
 JSSpec.ObjectEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
@@ -727,7 +752,6 @@ JSSpec.ObjectEqualityMatcher = function(expected, actual) {
 JSSpec.ObjectEqualityMatcher.prototype.matches = function() {return this.match}
 JSSpec.ObjectEqualityMatcher.prototype.explain = function() {return this.explaination}
 JSSpec.ObjectEqualityMatcher.prototype.makeExplain = function() {
-	
 	if(this.expected == this.actual) {
 		this.match = true;
 		return "";
@@ -759,7 +783,6 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplainForDomNode = function(key) {
 	var sb = [];
 	
 	sb.push(JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual));
-//	sb.push(JSSpec.EqualityMatcher.diffExplain(this.expected.toString(), this.actual.toString()));
 	
 	return sb.join("");
 }
@@ -796,6 +819,9 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplainForItemMismatch = function(key
 
 
 
+/**
+ * ArrayEqualityMatcher
+ */
 JSSpec.ArrayEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
@@ -836,6 +862,10 @@ JSSpec.ArrayEqualityMatcher.prototype.makeExplainForItemMismatch = function(inde
 }
 
 
+
+/**
+ * NumberEqualityMatcher
+ */
 JSSpec.NumberEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
@@ -849,6 +879,9 @@ JSSpec.NumberEqualityMatcher.prototype.explain = function() {
 
 
 
+/**
+ * StringEqualityMatcher
+ */
 JSSpec.StringEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
@@ -866,6 +899,9 @@ JSSpec.StringEqualityMatcher.prototype.explain = function() {
 
 
 
+/**
+ * PatternMatcher
+ */
 JSSpec.PatternMatcher = function(actual, pattern, condition) {
 	this.actual = actual;
 	this.pattern = pattern;
@@ -907,10 +943,10 @@ JSSpec.PatternMatcher.prototype.explain = function() {
 
 
 
-// Domain Specific Languages
+/**
+ * Domain Specific Languages
+ */
 JSSpec.DSL = {};
-
-
 
 JSSpec.DSL.forString = {
 	asHtml: function() {
@@ -1077,6 +1113,9 @@ JSSpec.DSL.Subject.prototype.getType = function() {
 
 
 
+/**
+ * Utilities
+ */
 JSSpec.util = {
 	parseOptions: function() {
 		var options = {};
@@ -1221,7 +1260,9 @@ String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 
 
 
-// Main
+/**
+ * Main
+ */
 window.onload = function() {
 	var options = JSSpec.util.parseOptions();
 	
@@ -1237,19 +1278,15 @@ window.onload = function() {
 			}
 		}
 	} else {
-		loadSpecs();
-	}
-}
-
-function loadSpecs() {
-	var links = document.getElementById('list').getElementsByTagName('A');
-	var frameContainer = document.createElement('DIV');
-	frameContainer.style.display = 'none';
-	document.body.appendChild(frameContainer);
-	
-	for(var i = 0; i < links.length; i++) {
-		var frame = document.createElement('IFRAME');
-		frame.src = links[i].href + '?inSuite=0';
-		frameContainer.appendChild(frame);
+		var links = document.getElementById('list').getElementsByTagName('A');
+		var frameContainer = document.createElement('DIV');
+		frameContainer.style.display = 'none';
+		document.body.appendChild(frameContainer);
+		
+		for(var i = 0; i < links.length; i++) {
+			var frame = document.createElement('IFRAME');
+			frame.src = links[i].href + '?inSuite=0';
+			frameContainer.appendChild(frame);
+		}
 	}
 }
