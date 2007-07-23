@@ -438,6 +438,8 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 		
 		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ", line " + example.exception.lineNumber));
 		li.appendChild(p);
+
+		li.scrollIntoView(false);
 	}
 	
 	var summary = document.getElementById("summary");
