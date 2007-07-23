@@ -970,6 +970,10 @@ JSSpec.DSL.Subject = function(target) {
 	this.target = target;
 }
 JSSpec.DSL.Subject.prototype._type = 'Subject';
+JSSpec.DSL.Subject.prototype.should_fail = function(message) {
+	JSSpec._assertionFailure = {message:message};
+	throw JSSpec._assertionFailure;
+}
 JSSpec.DSL.Subject.prototype.should_be = function(expected) {
 	var matcher = JSSpec.EqualityMatcher.createInstance(expected, this.target);
 	if(!matcher.matches()) {
