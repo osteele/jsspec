@@ -520,7 +520,11 @@ JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
 JSSpec.PropertyLengthMatcher = function(num, property, o, condition) {
 	this.num = num;
 	this.o = o;
-	this.property = (this.o._type == 'String' || this.o._type == 'Array') ? 'length' : property;
+	this.property = property;
+	if((property == 'characters' || property == 'items') && typeof o.length != 'undefined') {
+		this.property = 'length';
+	}
+	
 	this.condition = condition;
 	this.conditionMet = function(x) {
 		if(condition == 'exactly') return x.length == num;
@@ -1102,7 +1106,7 @@ JSSpec.util = {
 	},
 	inspectDomPath: function(o) {
 		var sb = [];
-		while(o && o.nodeName != '#document') {
+		while(o && o.nodeName != '#document' && o.parent) {
 			var siblings = o.parentNode.childNodes;
 			for(var i = 0; i < siblings.length; i++) {
 				if(siblings[i] == o) {
@@ -1147,15 +1151,6 @@ JSSpec.util = {
 		if(o == null) return '<span class="null_value">null</span>';
 		if(o._type == 'String') return '<span class="string_value">"' + (dontEscape ? o : JSSpec.util.escapeHtml(o)) + '"</span>';
 
-		if(o._type == 'Array') {
-			var sb = [];
-			for(var i = 0; i < o.length; i++) {
-				var inspected = JSSpec.util.inspect(o[i]);
-				sb.push(i == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
-			}
-			return '<span class="array_value">[' + sb.join(', ') + ']</span>';
-		}
-		
 		if(o._type == 'Date') {
 			return '<span class="date_value">"' + o.toString() + '"</span>';
 		}
@@ -1167,6 +1162,15 @@ JSSpec.util = {
 		if(o._type == 'RegExp') return '<span class="regexp_value">' + o + '</span>';
 
 		if(JSSpec.util.isDomNode(o)) return JSSpec.util.inspectDomNode(o);
+
+		if(o._type == 'Array' || typeof o.length != 'undefined') {
+			var sb = [];
+			for(var i = 0; i < o.length; i++) {
+				var inspected = JSSpec.util.inspect(o[i]);
+				sb.push(i == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
+			}
+			return '<span class="array_value">[' + sb.join(', ') + ']</span>';
+		}
 		
 		// object
 		var sb = [];
