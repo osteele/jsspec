@@ -1053,6 +1053,22 @@ JSSpec.DSL.Subject.prototype.getType = function() {
 
 
 JSSpec.util = {
+	parseOptions: function() {
+		var options = {};
+		
+		var url = location.href;
+		var queryIndex = url.indexOf('?');
+		if(queryIndex == -1) return options;
+		
+		var query = url.substring(queryIndex + 1);
+		var pairs = query.split('&');
+		for(var i = 0; i < pairs.length; i++) {
+			var tokens = pairs[i].split('=');
+			options[tokens[0]] = tokens[1];
+		}
+		
+		return options;
+	},
 	correctHtmlAttrQuotation: function(html) {
 		html = html.replace(/(\w+)=['"]([^'"]+)['"]/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
 		html = html.replace(/(\w+)=([^ '"]+)/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
@@ -1182,6 +1198,33 @@ String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 
 // Main
 window.onload = function() {
-	JSSpec.runner = new JSSpec.Runner(JSSpec.specs, new JSSpec.Logger());
-	JSSpec.runner.run();
+	var options = JSSpec.util.parseOptions();
+	
+	if(JSSpec.specs.length > 0) {
+		if(!options.inSuite) {
+			JSSpec.runner = new JSSpec.Runner(JSSpec.specs, new JSSpec.Logger());
+			JSSpec.runner.run();
+		} else {
+			// in suite, send all specs to parent
+			var parentWindow = window.frames.parent.window;
+			for(var i = 0; i < JSSpec.specs.length; i++) {
+				parentWindow.JSSpec.specs.push(JSSpec.specs[i]);
+			}
+		}
+	} else {
+		loadSpecs();
+	}
+}
+
+function loadSpecs() {
+	var links = document.getElementById('list').getElementsByTagName('A');
+	var frameContainer = document.createElement('DIV');
+	frameContainer.style.display = 'none';
+	document.body.appendChild(frameContainer);
+	
+	for(var i = 0; i < links.length; i++) {
+		var frame = document.createElement('IFRAME');
+		frame.src = links[i].href + '?inSuite=0';
+		frameContainer.appendChild(frame);
+	}
 }
