@@ -148,6 +148,23 @@ describe('"Should be"s', {
 		var expected = {a:1, b:2, c:3};
 		
 		expect(actual).should_be(expected);
+	},
+	'null should be null': function() {
+		expect(null).should_be(null);
+	},
+	'null should not be undefined': function() {
+		expect(null).should_be(undefined);
+	},
+	'null should not be null': function() {
+		expect(null).should_not_be(null);
+	},
+	'empty array 1': function() {
+		expect([]).should_be_empty();
+		expect([1]).should_be_empty();
+	},
+	'empty array 2': function() {
+		expect([1]).should_not_be_empty();
+		expect([]).should_not_be_empty();
 	}
 })
 

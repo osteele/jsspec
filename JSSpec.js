@@ -690,7 +690,7 @@ JSSpec.NullEqualityMatcher = function(expected, actual) {
 	this.actual = actual;
 }
 JSSpec.NullEqualityMatcher.prototype.matches = function() {
-	return this.expected == this.actual;
+	return this.expected == this.actual && typeof this.expected == typeof this.actual;
 }
 JSSpec.NullEqualityMatcher.prototype.explain = function() {
 	return JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual);
@@ -982,56 +982,71 @@ JSSpec.DSL.Subject.prototype.should_not_be = function(expected) {
 		JSSpec._assertionFailure = {message:"'" + this.target + "' should not be '" + expected + "'"};
 		throw JSSpec._assertionFailure;
 	}
-},
+}
 JSSpec.DSL.Subject.prototype.should_be_empty = function() {
 	this.should_have(0, this.getType() == 'String' ? 'characters' : 'items');
-},
+}
+JSSpec.DSL.Subject.prototype.should_not_be_empty = function() {
+	this.should_have_at_least(1, this.getType() == 'String' ? 'characters' : 'items');
+}
 JSSpec.DSL.Subject.prototype.should_be_true = function() {
 	this.should_be(true);
-},
+}
 JSSpec.DSL.Subject.prototype.should_be_false = function() {
 	this.should_be(false);
-},
+}
+JSSpec.DSL.Subject.prototype.should_be_null = function() {
+	this.should_be(null);
+}
+JSSpec.DSL.Subject.prototype.should_be_undefined = function() {
+	this.should_be(undefined);
+}
+JSSpec.DSL.Subject.prototype.should_not_be_null = function() {
+	this.should_not_be(null);
+}
+JSSpec.DSL.Subject.prototype.should_not_be_undefined = function() {
+	this.should_not_be(undefined);
+}
 JSSpec.DSL.Subject.prototype._should_have = function(num, property, condition) {
 	var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, this.target, condition);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-},
+}
 JSSpec.DSL.Subject.prototype.should_have = function(num, property) {
 	this._should_have(num, property, "exactly");
-},
+}
 JSSpec.DSL.Subject.prototype.should_have_exactly = function(num, property) {
 	this._should_have(num, property, "exactly");
-},
+}
 JSSpec.DSL.Subject.prototype.should_have_at_least = function(num, property) {
 	this._should_have(num, property, "at least");
-},
+}
 JSSpec.DSL.Subject.prototype.should_have_at_most = function(num, property) {
 	this._should_have(num, property, "at most");
-},
+}
 JSSpec.DSL.Subject.prototype.should_include = function(expected) {
 	var matcher = JSSpec.IncludeMatcher.createInstance(this.target, expected, true);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-},
+}
 JSSpec.DSL.Subject.prototype.should_not_include = function(expected) {
 	var matcher = JSSpec.IncludeMatcher.createInstance(this.target, expected, false);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-},
+}
 JSSpec.DSL.Subject.prototype.should_match = function(pattern) {
 	var matcher = JSSpec.PatternMatcher.createInstance(this.target, pattern, true);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-},
+}
 JSSpec.DSL.Subject.prototype.should_not_match = function(pattern) {
 	var matcher = JSSpec.PatternMatcher.createInstance(this.target, pattern, false);
 	if(!matcher.matches()) {
