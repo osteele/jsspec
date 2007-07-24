@@ -185,10 +185,12 @@ JSSpec.CompositeExecutor.prototype.run = function() {
 JSSpec.Spec = function(context, entries) {
 	this.id = JSSpec.Spec.id++;
 	this.context = context;
+	this.url = location.href;
 	
 	this.filterEntriesByEmbeddedExpressions(entries);
 	this.extractOutSpecialEntries(entries);
 	this.examples = this.makeExamplesFromEntries(entries);
+	this.examplesMap = this.makeMapFromExamples(this.examples);
 }
 JSSpec.Spec.id = 0;
 JSSpec.Spec.prototype.getExamples = function() {
@@ -254,6 +256,17 @@ JSSpec.Spec.prototype.makeExamplesFromEntries = function(entries) {
 		examples.push(new JSSpec.Example(name, entries[name], this.beforeEach, this.afterEach));
 	}
 	return examples;
+}
+JSSpec.Spec.prototype.makeMapFromExamples = function(examples) {
+	var map = {};
+	for(var i = 0; i < examples.length; i++) {
+		var example = examples[i];
+		map[example.id] = examples[i];
+	}
+	return map;
+}
+JSSpec.Spec.prototype.getExampleById = function(id) {
+	return this.examplesMap[id];
 }
 JSSpec.Spec.prototype.getExecutor = function() {
 	var self = this;
@@ -327,7 +340,21 @@ JSSpec.Example.prototype.getExecutor = function() {
  */
 JSSpec.Runner = function(specs, logger) {
 	JSSpec.log = logger;
-	this.specs = specs;
+	this.specs = [];
+	this.specsMap = {};
+	this.addAllSpecs(specs);
+}
+JSSpec.Runner.prototype.addAllSpecs = function(specs) {
+	for(var i = 0; i < specs.length; i++) {
+		this.addSpec(specs[i]);
+	}
+}
+JSSpec.Runner.prototype.addSpec = function(spec) {
+	this.specs.push(spec);
+	this.specsMap[spec.id] = spec;
+}
+JSSpec.Runner.prototype.getSpecById = function(id) {
+	return this.specsMap[id];
 }
 JSSpec.Runner.prototype.getSpecs = function() {
 	return this.specs;
@@ -1263,11 +1290,21 @@ String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 /**
  * Main
  */
+JSSpec.defaultOptions = {
+	autorun: 1,
+	specIdBeginsWith: 0,
+	exampleIdBeginsWith: 0
+};
+JSSpec.options = JSSpec.util.parseOptions();
+
+JSSpec.Spec.id = JSSpec.options.specIdBeginsWith || JSSpec.defaultOptions.specIdBeginsWith;
+JSSpec.Example.id = JSSpec.options.exampleIdBeginsWith || JSSpec.defaultOptions.exampleIdBeginsWith;
+
+
+
 window.onload = function() {
-	var options = JSSpec.util.parseOptions();
-	
 	if(JSSpec.specs.length > 0) {
-		if(!options.inSuite) {
+		if(!JSSpec.options.inSuite) {
 			JSSpec.runner = new JSSpec.Runner(JSSpec.specs, new JSSpec.Logger());
 			JSSpec.runner.run();
 		} else {
@@ -1285,7 +1322,7 @@ window.onload = function() {
 		
 		for(var i = 0; i < links.length; i++) {
 			var frame = document.createElement('IFRAME');
-			frame.src = links[i].href + '?inSuite=0';
+			frame.src = links[i].href + '?inSuite=0&specIdBeginsWith=' + (i * 10000) + '&exampleIdBeginsWith=' + (i * 10000);
 			frameContainer.appendChild(frame);
 		}
 	}
