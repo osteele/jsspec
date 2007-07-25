@@ -390,7 +390,7 @@ JSSpec.Runner.prototype.run = function() {
 
 JSSpec.Runner.prototype.rerunSingleSpec = function(id) {
 	JSSpec.specs = [this.getSpecById(id)];
-	JSSpec.runner = new JSSpec.Runner(this.getSpecById(id), JSSpec.log);
+	JSSpec.runner = new JSSpec.Runner(JSSpec.specs, JSSpec.log);
 	JSSpec.runner.run();
 }
 
@@ -400,11 +400,20 @@ JSSpec.Runner.prototype.rerunSingleSpec = function(id) {
 JSSpec.Logger = function() {}
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
+	var container = $('jsspec_container');
+	if(container) {
+		container.innerHTML = "";
+	} else {
+		container = document.createElement("DIV");
+		container.id = "jsspec_container";
+		document.body.appendChild(container);
+	}
+	
 	var summary = document.createElement("H1");
 	summary.id = "summary";
 	summary.className = "ongoing";
 	summary.innerHTML = 'JSSpec results <span style="font-size:0.5em;">(<span id="total_examples">0</span> examples / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors)</span>';
-	document.body.appendChild(summary);
+	container.appendChild(summary);
 	
 	var specs = JSSpec.runner.getSpecs();
 
@@ -415,7 +424,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		var div = document.createElement("DIV");
 		div.id = "spec_" + spec.id;
 		div.className = "waiting";
-		document.body.appendChild(div);
+		container.appendChild(div);
 		
 		var heading = document.createElement("H2");
 		heading.id = "spec_heading_" + spec.id;

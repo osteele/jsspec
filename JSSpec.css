@@ -8,8 +8,13 @@
 }
 
 h2 a {
+	display: none;
 	color: white;
 	margin-left: 1em;
+}
+
+h2.exception a {
+	display: inline;
 }
 
 h1, h2, li {
