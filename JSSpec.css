@@ -7,6 +7,11 @@
 	line-height: 1.5em;
 }
 
+h2 a {
+	color: white;
+	margin-left: 1em;
+}
+
 h1, h2, li {
 	font-size: 2em;
 	padding: 0.2em;

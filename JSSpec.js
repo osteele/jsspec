@@ -388,7 +388,11 @@ JSSpec.Runner.prototype.run = function() {
 	executor.run();
 }
 
-
+JSSpec.Runner.prototype.rerunSingleSpec = function(id) {
+	JSSpec.specs = [this.getSpecById(id)];
+	JSSpec.runner = new JSSpec.Runner(this.getSpecById(id), JSSpec.log);
+	JSSpec.runner.run();
+}
 
 /**
  * Logger
@@ -417,6 +421,15 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		heading.id = "spec_heading_" + spec.id;
 		heading.className = "waiting";
 		heading.appendChild(document.createTextNode(spec.context));
+		
+		var rerun = document.createElement("A");
+		rerun.href = "#";
+		rerun.innerHTML = "rerun";
+		rerun.onclick = function() {
+			JSSpec.runner.rerunSingleSpec(spec.id);
+			return false;
+		};
+		heading.appendChild(rerun);
 		div.appendChild(heading);
 		
 		var examples = spec.getExamples();
