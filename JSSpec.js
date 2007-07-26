@@ -1000,7 +1000,7 @@ JSSpec.DSL = {};
 JSSpec.DSL.forString = {
 	asHtml: function() {
 		var html = this;
-			
+		
 		// Uniformize quotation, turn tag names and attribute names into lower case
 		html = html.replace(/<(\/?)(\w+)([^>]*?)>/img, function(str, closingMark, tagName, attrs) {
 			var sortedAttrs = JSSpec.util.sortHtmlAttrs(JSSpec.util.correctHtmlAttrQuotation(attrs).toLowerCase())
@@ -1034,8 +1034,10 @@ JSSpec.DSL.forString = {
 		// remove new-lines
 		html = html.replace(/\r/mg, '')
 		html = html.replace(/\n/mg, '')
-		html = html.replace(/(>[^<>]*?)\s+([^<>]*?<)/mg, '$1$2')
 		
+		// TODO remove this?
+		//html = html.replace(/(>[^<>]*?)\s+([^<>]*?<)/mg, '$1$2')
+			
 		return html;
 	}
 }
