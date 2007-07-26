@@ -478,6 +478,8 @@ JSSpec.Logger.prototype.onSpecEnd = function(spec) {
 	
 	var heading = document.getElementById("spec_heading_" + spec.id);
 	heading.className = spec.hasException() ? "exception" : "success";
+
+	if(JSSpec.options.autocollapse && !spec.hasException()) heading.nextSibling.style.display = "none";
 	
 	if(spec.exception) {
 		heading.appendChild(document.createTextNode(" - " + spec.exception.message));
@@ -1169,8 +1171,8 @@ JSSpec.DSL.Subject.prototype.getType = function() {
  * Utilities
  */
 JSSpec.util = {
-	parseOptions: function() {
-		var options = {};
+	parseOptions: function(defaults) {
+		var options = defaults;
 		
 		var url = location.href;
 		var queryIndex = url.indexOf('?');
@@ -1318,12 +1320,13 @@ String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
 JSSpec.defaultOptions = {
 	autorun: 1,
 	specIdBeginsWith: 0,
-	exampleIdBeginsWith: 0
+	exampleIdBeginsWith: 0,
+	autocollapse: 1
 };
-JSSpec.options = JSSpec.util.parseOptions();
+JSSpec.options = JSSpec.util.parseOptions(JSSpec.defaultOptions);
 
-JSSpec.Spec.id = JSSpec.options.specIdBeginsWith || JSSpec.defaultOptions.specIdBeginsWith;
-JSSpec.Example.id = JSSpec.options.exampleIdBeginsWith || JSSpec.defaultOptions.exampleIdBeginsWith;
+JSSpec.Spec.id = JSSpec.options.specIdBeginsWith;
+JSSpec.Example.id = JSSpec.options.exampleIdBeginsWith;
 
 
 
