@@ -356,6 +356,12 @@ JSSpec.Runner.prototype.addSpec = function(spec) {
 JSSpec.Runner.prototype.getSpecById = function(id) {
 	return this.specsMap[id];
 }
+JSSpec.Runner.prototype.getSpecByContext = function(context) {
+	for(var i = 0; i < this.specs.length; i++) {
+		if(this.specs[i].context == context) return this.specs[i];
+	}
+	return null;
+}
 JSSpec.Runner.prototype.getSpecs = function() {
 	return this.specs;
 }
@@ -388,9 +394,8 @@ JSSpec.Runner.prototype.run = function() {
 	executor.run();
 }
 
-JSSpec.Runner.prototype.rerunSingleSpec = function(id) {
-	JSSpec.specs = [this.getSpecById(id)];
-	JSSpec.runner = new JSSpec.Runner(JSSpec.specs, JSSpec.log);
+JSSpec.Runner.prototype.rerun = function(context) {
+	JSSpec.runner = new JSSpec.Runner([this.getSpecByContext(context)], JSSpec.log);
 	JSSpec.runner.run();
 }
 
@@ -400,7 +405,7 @@ JSSpec.Runner.prototype.rerunSingleSpec = function(id) {
 JSSpec.Logger = function() {}
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
-	var container = $('jsspec_container');
+	var container = document.getElementById('jsspec_container');
 	if(container) {
 		container.innerHTML = "";
 	} else {
@@ -432,12 +437,8 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		heading.appendChild(document.createTextNode(spec.context));
 		
 		var rerun = document.createElement("A");
-		rerun.href = "#";
+		rerun.href = "?rerun=" + encodeURIComponent(spec.context);
 		rerun.innerHTML = "rerun";
-		rerun.onclick = function() {
-			JSSpec.runner.rerunSingleSpec(spec.id);
-			return false;
-		};
 		heading.appendChild(rerun);
 		div.appendChild(heading);
 		
@@ -1330,7 +1331,11 @@ window.onload = function() {
 	if(JSSpec.specs.length > 0) {
 		if(!JSSpec.options.inSuite) {
 			JSSpec.runner = new JSSpec.Runner(JSSpec.specs, new JSSpec.Logger());
-			JSSpec.runner.run();
+			if(JSSpec.options.rerun) {
+				JSSpec.runner.rerun(decodeURIComponent(JSSpec.options.rerun));
+			} else {
+				JSSpec.runner.run();
+			}
 		} else {
 			// in suite, send all specs to parent
 			var parentWindow = window.frames.parent.window;
