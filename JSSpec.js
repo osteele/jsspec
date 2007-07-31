@@ -1273,7 +1273,7 @@ JSSpec.util = {
 		
 		if(o._type == 'Boolean') return '<span class="boolean_value">' + o + '</span>';
 
-		if(o._type == 'RegExp') return '<span class="regexp_value">' + o + '</span>';
+		if(o._type == 'RegExp') return '<span class="regexp_value">' + JSSpec.util.escapeHtml(o.toString()) + '</span>';
 
 		if(JSSpec.util.isDomNode(o)) return JSSpec.util.inspectDomNode(o);
 
