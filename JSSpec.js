@@ -465,12 +465,12 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			for(var i = 0; i < specs.length; i++) {
 				var spec = specs[i];
 				sb.push('	<li id="spec_' + specs[i].id + '">');
-				sb.push('		<h3><a href="#">' + specs[i].context + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
+				sb.push('		<h3>' + specs[i].context + ' [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
 				sb.push('		<ul id="spec_' + specs[i].id + '_examples" class="examples">');
 				for(var j = 0; j < spec.examples.length; j++) {
 					var example = spec.examples[j];
 					sb.push('			<li id="example_' + example.id + '">')
-					sb.push('				<h4><a href="#">' + example.name + '</a></h4>')
+					sb.push('				<h4>' + example.name + '</h4>')
 					sb.push('			</li>')
 				}
 				sb.push('		</ul>');
