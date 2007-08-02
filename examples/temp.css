@@ -8,7 +8,7 @@ html {
   overflow: hidden;
 }
 
-body {
+body, #jsspec_container {
   overflow: hidden;
   padding: 0;
   margin: 0;
@@ -35,7 +35,7 @@ body {
   left: 0px;
   bottom: 0px;
   overflow: auto;    
-  width: 200px;    
+  width: 300px;    
   _height:expression(document.body.clientHeight-40);
 }
 
@@ -44,12 +44,12 @@ body {
   margin: 0;
   position: absolute;    
   top: 40px;
-  left: 200px;
+  left: 300px;
   right: 0px;
   bottom: 0px;
   overflow: auto;
   _height:expression(document.body.clientHeight-40);
-  _width:expression(document.body.clientWidth-200);
+  _width:expression(document.body.clientWidth-300);
 }
 
 
@@ -105,6 +105,7 @@ ul.specs li h3 {
 	font-weight: bold;
 	font-size: 0.75em;
 	padding: 0.2em 1em;
+	overflow: hidden;
 }
 
 /* example container */
@@ -174,4 +175,40 @@ ul.examples li.ongoing, ul.examples li.ongoing a {
 	color: #000000;
 	background-color: #FFFF80;
 	border-color: #DDDD00;
+}
+
+
+
+/* --------------------
+ * values
+ */
+.number_value, .string_value, .regexp_value, .boolean_value, .dom_value {
+	font-family: monospace;
+	color: blue;
+}
+.object_value, .array_value {
+	line-height: 2em;
+	padding: 0.1em 0.2em;
+	margin: 0.1em 0;
+}
+.date_value {
+	font-family: monospace;
+	color: olive;
+}
+.undefined_value, .null_value {
+	font-style: italic;
+	color: blue;
+}
+.dom_attr_name {
+}
+.dom_attr_value {
+	color: red;
+}
+.dom_path {
+	font-size: 0.75em;
+	color: gray;
+}
+strong {
+	font-weight: normal;
+	background-color: #FFC6C6;
 }

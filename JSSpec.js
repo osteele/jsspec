@@ -340,6 +340,8 @@ JSSpec.Example.prototype.getExecutor = function() {
  */
 JSSpec.Runner = function(specs, logger) {
 	JSSpec.log = logger;
+	
+	this.totalExamples = 0;
 	this.specs = [];
 	this.specsMap = {};
 	this.addAllSpecs(specs);
@@ -352,6 +354,7 @@ JSSpec.Runner.prototype.addAllSpecs = function(specs) {
 JSSpec.Runner.prototype.addSpec = function(spec) {
 	this.specs.push(spec);
 	this.specsMap[spec.id] = spec;
+	this.totalExamples += spec.getExamples().length;
 }
 JSSpec.Runner.prototype.getSpecById = function(id) {
 	return this.specsMap[id];
@@ -402,9 +405,13 @@ JSSpec.Runner.prototype.rerun = function(context) {
 /**
  * Logger
  */
-JSSpec.Logger = function() {}
+JSSpec.Logger = function() {
+	this.finishedExamples = 0;
+	this.startedAt = null;
+}
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
+	this.startedAt = new Date();
 	var container = document.getElementById('jsspec_container');
 	if(container) {
 		container.innerHTML = "";
@@ -414,72 +421,87 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		document.body.appendChild(container);
 	}
 	
-	var summary = document.createElement("H1");
-	summary.id = "summary";
-	summary.className = "ongoing";
-	summary.innerHTML = 'JSSpec results <span style="font-size:0.5em;">(<span id="total_examples">0</span> examples / <span id="total_failures">0</span> failures / <span id="total_errors">0</span> errors)</span>';
-	container.appendChild(summary);
+	var title = document.createElement("DIV");
+	title.id = "title";
+	title.innerHTML = [
+		'<h1>JSSpec runner</h1>',
+		'<ul>',
+		'	<li><span id="total_examples">' + JSSpec.runner.totalExamples + '</span> examples</li>',
+		'	<li><span id="total_failures">0</span> failures</li>',
+		'	<li><span id="total_errors">0</span> errors</li>',
+		'	<li><span id="progress">0</span>% done</li>',
+		'	<li><span id="total_elapsed">0</span> secs</li>',
+		'</ul>',
+		'<p><a href="http://jania.pe.kr/aw/moin.cgi/JSSpec">JSSpec homepage</a></p>',
+	].join("");
+	container.appendChild(title);
+
+	var list = document.createElement("DIV");
+	list.id = "list";
+	list.innerHTML = [
+		'<h2>List</h2>',
+		'<ul class="specs">',
+		function() {
+			var specs = JSSpec.runner.getSpecs();
+			var sb = [];
+			for(var i = 0; i < specs.length; i++) {
+				var spec = specs[i];
+				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + specs[i].context + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3></li>');
+			}
+			return sb.join("");
+		}(),
+		'</ul>'
+	].join("");
+	container.appendChild(list);
 	
-	var specs = JSSpec.runner.getSpecs();
-
-	var total_examples = 0;
-		
-	for(var i = 0; i < specs.length; i++) {
-		var spec = specs[i];
-		var div = document.createElement("DIV");
-		div.id = "spec_" + spec.id;
-		div.className = "waiting";
-		container.appendChild(div);
-		
-		var heading = document.createElement("H2");
-		heading.id = "spec_heading_" + spec.id;
-		heading.className = "waiting";
-		heading.appendChild(document.createTextNode(spec.context));
-		
-		var rerun = document.createElement("A");
-		rerun.href = "?rerun=" + encodeURIComponent(spec.context);
-		rerun.innerHTML = "rerun";
-		heading.appendChild(rerun);
-		div.appendChild(heading);
-		
-		var examples = spec.getExamples();
-		
-		var ul = document.createElement("UL");
-		div.appendChild(ul);
-		
-		for(var j = 0; j < examples.length; j++) {
-			total_examples++;
-			var example = examples[j];
-			var li = document.createElement("LI");
-			li.id = "example_" + example.id;
-			li.className = "waiting";
-			var p = document.createElement("P");
-			p.appendChild(document.createTextNode(example.name));
-			li.appendChild(p);
-			ul.appendChild(li);
-		}
-	}
-
-	document.getElementById("total_examples").innerHTML = total_examples;
+	var log = document.createElement("DIV");
+	log.id = "log";
+	log.innerHTML = [
+		'<h2>Log</h2>',
+		'<ul class="specs">',
+		function() {
+			var specs = JSSpec.runner.getSpecs();
+			var sb = [];
+			for(var i = 0; i < specs.length; i++) {
+				var spec = specs[i];
+				sb.push('	<li id="spec_' + specs[i].id + '">');
+				sb.push('		<h3><a href="#">' + specs[i].context + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
+				sb.push('		<ul id="spec_' + specs[i].id + '_examples" class="examples">');
+				for(var j = 0; j < spec.examples.length; j++) {
+					var example = spec.examples[j];
+					sb.push('			<li id="example_' + example.id + '">')
+					sb.push('				<h4><a href="#">' + example.name + '</a></h4>')
+					sb.push('			</li>')
+				}
+				sb.push('		</ul>');
+				sb.push('	</li>');
+			}
+			return sb.join("");
+		}(),
+		'</ul>'
+	].join("");
+	container.appendChild(log);
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
 	
 }
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
-	var div = document.getElementById("spec_" + spec.id);
-	div.className = "ongoing";
+	var spec_list = document.getElementById("spec_" + spec.id + "_list");
+	var spec_log = document.getElementById("spec_" + spec.id);
 	
-	var heading = document.getElementById("spec_heading_" + spec.id);
-	heading.className = "ongoing";
+	spec_list.className = "ongoing";
+	spec_log.className = "ongoing";
 }
 JSSpec.Logger.prototype.onSpecEnd = function(spec) {
-	var div = document.getElementById("spec_" + spec.id);
-	div.className = spec.exception ? "exception" : "success";
-	
-	var heading = document.getElementById("spec_heading_" + spec.id);
-	heading.className = spec.hasException() ? "exception" : "success";
+	var spec_list = document.getElementById("spec_" + spec.id + "_list");
+	var spec_log = document.getElementById("spec_" + spec.id);
+	var examples = document.getElementById("spec_" + spec.id + "_examples");
+	var className = spec.hasException() ? "exception" : "success";
 
-	if(JSSpec.options.autocollapse && !spec.hasException()) heading.nextSibling.style.display = "none";
+	spec_list.className = className;
+	spec_log.className = className;
+
+	if(JSSpec.options.autocollapse && !spec.hasException()) examples.style.display = "none";
 	
 	if(spec.exception) {
 		heading.appendChild(document.createTextNode(" - " + spec.exception.message));
@@ -494,25 +516,21 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	li.className = example.exception ? "exception" : "success";
 	
 	if(example.exception) {
-		var p = document.createElement("P");
-		
 		var div = document.createElement("DIV");
-		div.innerHTML = example.exception.message;
-		p.appendChild(div);
-		
-		p.appendChild(document.createTextNode(" at " + example.exception.fileName + ", line " + example.exception.lineNumber));
-		li.appendChild(p);
-
-		li.scrollIntoView(false);
+		div.innerHTML = example.exception.message + "<p><br />" + " at " + example.exception.fileName + ", line " + example.exception.lineNumber + "</p>";
+		li.appendChild(div);
 	}
 	
-	var summary = document.getElementById("summary");
+	var title = document.getElementById("title");
 	var runner = JSSpec.runner;
 	
-	summary.className = runner.hasException() ? "exception" : "success";
+	title.className = runner.hasException() ? "exception" : "success";
+	
+	this.finishedExamples++;
 	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
 	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
-
+	document.getElementById("progress").innerHTML = parseInt(this.finishedExamples / runner.totalExamples * 100);
+	document.getElementById("total_elapsed").innerHTML = (new Date().getTime() - this.startedAt.getTime()) / 1000;
 }
 
 
