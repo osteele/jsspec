@@ -16,24 +16,6 @@ describe('Plus operator (just for example)', {
 	}
 })
 
-describe('Failure messages', {
-	'Should be (String)': function() {
-		expect("Hello World").should_be("Good-bye world");
-	},
-	'Should have (Object\s item)': function() {
-		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should_have(3, "accounts");
-	},
-	'Should have at least': function() {
-		expect([1,2,3]).should_have_at_least(4, "items");
-	},
-	'Should include': function() {
-		expect([1,2,3]).should_include(4);
-	},
-	'Should match': function() {
-		expect("Hello").should_match(/bye/);
-	}
-})
-
 describe('"Should match"s', {
 	'Should match': function() {
 		expect("Hello").should_match(/ell/);
@@ -100,6 +82,25 @@ describe('"Should be empty"s', {
 		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should_have(0, "accounts");
 	}
 })
+
+describe('Failure messages', {
+	'Should be (String)': function() {
+		expect("Hello World").should_be("Good-bye world");
+	},
+	'Should have (Object\s item)': function() {
+		expect({name:'Alan Kang', email:'jania902@gmail.com', accounts:['A', 'B']}).should_have(3, "accounts");
+	},
+	'Should have at least': function() {
+		expect([1,2,3]).should_have_at_least(4, "items");
+	},
+	'Should include': function() {
+		expect([1,2,3]).should_include(4);
+	},
+	'Should match': function() {
+		expect("Hello").should_match(/bye/);
+	}
+})
+
 describe('"Should be"s', {
 	'String mismatch': function() {
 		expect("Hello world").should_be("Good-bye world");
