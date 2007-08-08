@@ -1019,7 +1019,7 @@ JSSpec.PatternMatcher.prototype.explain = function() {
 JSSpec.DSL = {};
 
 JSSpec.DSL.forString = {
-	asHtml: function() {
+	normalizeHtml: function() {
 		var html = this;
 		
 		// Uniformize quotation, turn tag names and attribute names into lower case
@@ -1328,7 +1328,8 @@ RegExp.prototype._type = "RegExp";
 
 var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype, Boolean.prototype, RegExp.prototype];
 
-String.prototype.asHtml = JSSpec.DSL.forString.asHtml;
+String.prototype.normalizeHtml = JSSpec.DSL.forString.normalizeHtml;
+String.prototype.asHtml = String.prototype.normalizeHtml;
 
 
 
