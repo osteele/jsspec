@@ -1040,7 +1040,7 @@ JSSpec.DSL.forString = {
 		})
 		
 		// append semi-colon at the end of style value
-		html = html.replace(/style="(.*)"/mg, function(str, styleStr) {
+		html = html.replace(/style="(.*?)"/mg, function(str, styleStr) {
 			styleStr = JSSpec.util.sortStyleEntries(styleStr.strip()); // for Safari
 			if(styleStr.charAt(styleStr.length - 1) != ';') styleStr += ";"
 			
