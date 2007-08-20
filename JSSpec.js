@@ -1252,10 +1252,11 @@ JSSpec.util = {
 	},
 	inspectDomNode: function(o) {
 		if(o.nodeType == 1) {
+			var nodeName = o.nodeName.toLowerCase();
 			var sb = [];
 			sb.push('<span class="dom_value">');
 			sb.push("&lt;");
-			sb.push(o.nodeName);
+			sb.push(nodeName);
 			
 			var attrs = o.attributes;
 			for(var i = 0; i < attrs.length; i++) {
@@ -1264,12 +1265,15 @@ JSSpec.util = {
 					attrs[i].nodeName != 'contentEditable' &&
 					attrs[i].nodeName != 'style' &&
 					typeof attrs[i].nodeValue != 'function'
-				) sb.push(' <span class="dom_attr_name">' + attrs[i].nodeName + '</span>=<span class="dom_attr_value">"' + attrs[i].nodeValue + '"</span>');
+				) sb.push(' <span class="dom_attr_name">' + attrs[i].nodeName.toLowerCase() + '</span>=<span class="dom_attr_value">"' + attrs[i].nodeValue + '"</span>');
 			}
 			if(o.style && o.style.cssText) {
 				sb.push(' <span class="dom_attr_name">style</span>=<span class="dom_attr_value">"' + o.style.cssText + '"</span>');
 			}
-			sb.push('&gt; <span class="dom_path">(' + JSSpec.util.inspectDomPath(o) + ')</span>' );
+			sb.push('&gt;');
+			sb.push(JSSpec.util.escapeHtml(o.innerHTML));
+			sb.push('&lt;/' + nodeName + '&gt;');
+			sb.push(' <span class="dom_path">(' + JSSpec.util.inspectDomPath(o) + ')</span>' );
 			sb.push('</span>');
 			return sb.join("");
 		} else if(o.nodeType == 3) {
