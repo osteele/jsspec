@@ -411,6 +411,8 @@ JSSpec.Logger = function() {
 }
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
+	this._title = document.title;
+	
 	this.startedAt = new Date();
 	var container = document.getElementById('jsspec_container');
 	if(container) {
@@ -483,7 +485,33 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	container.appendChild(log);
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
+	if(JSSpec.runner.hasException()) {
+		var times = 4;
+		var title1 = "*" + this._title;
+		var title2 = "*F" + JSSpec.runner.getTotalFailures() + " E" + JSSpec.runner.getTotalErrors() + "* " + this._title;
+	} else {
+		var times = 2;
+		var title1 = this._title;
+		var title2 = "Success";
+	}
+	this.blinkTitle(times,title1,title2);
+}
+JSSpec.Logger.prototype.blinkTitle = function(times, title1, title2) {
+	var times = times * 2;
+	var mode = true;
 	
+	var f = function() {
+		if(times > 0) {
+			document.title = mode ? title1 : title2;
+			mode = !mode;
+			times--;
+			window.setTimeout(f, 500);
+		} else {
+			document.title = title1;
+		}
+	}
+	
+	f();
 }
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
 	var spec_list = document.getElementById("spec_" + spec.id + "_list");
@@ -529,8 +557,11 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	this.finishedExamples++;
 	document.getElementById("total_failures").innerHTML = runner.getTotalFailures();
 	document.getElementById("total_errors").innerHTML = runner.getTotalErrors();
-	document.getElementById("progress").innerHTML = parseInt(this.finishedExamples / runner.totalExamples * 100);
+	var progress = parseInt(this.finishedExamples / runner.totalExamples * 100);
+	document.getElementById("progress").innerHTML = progress;
 	document.getElementById("total_elapsed").innerHTML = (new Date().getTime() - this.startedAt.getTime()) / 1000;
+	
+	document.title = progress + "%: " + this._title;
 }
 
 
