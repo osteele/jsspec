@@ -448,7 +448,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			var sb = [];
 			for(var i = 0; i < specs.length; i++) {
 				var spec = specs[i];
-				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + specs[i].context + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3></li>');
+				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + JSSpec.util.escapeTags(specs[i].context) + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3></li>');
 			}
 			return sb.join("");
 		}(),
@@ -467,12 +467,12 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			for(var i = 0; i < specs.length; i++) {
 				var spec = specs[i];
 				sb.push('	<li id="spec_' + specs[i].id + '">');
-				sb.push('		<h3>' + specs[i].context + ' [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
+				sb.push('		<h3>' + JSSpec.util.escapeTags(specs[i].context) + ' [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3>');
 				sb.push('		<ul id="spec_' + specs[i].id + '_examples" class="examples">');
 				for(var j = 0; j < spec.examples.length; j++) {
 					var example = spec.examples[j];
 					sb.push('			<li id="example_' + example.id + '">')
-					sb.push('				<h4>' + example.name + '</h4>')
+					sb.push('				<h4>' + JSSpec.util.escapeTags(example.name) + '</h4>')
 					sb.push('			</li>')
 				}
 				sb.push('		</ul>');
@@ -1060,15 +1060,9 @@ JSSpec.DSL.forString = {
 		})
 		
 		// validation self-closing tags
-		html = html.replace(/<br([^>]*?)>/mg, function(str, attrs) {
-			return "<br" + attrs + " />"
-		})
-		html = html.replace(/<hr([^>]*?)>/mg, function(str, attrs) {
-			return "<hr" + attrs + " />"
-		})
-		html = html.replace(/<img([^>]*?)>/mg, function(str, attrs) {
-			return "<img" + attrs + " />"
-		})
+		html = html.replace(/<(br|hr|img)([^>]*?)>/mg, function(str, tag, attrs) {
+			return "<" + tag + attrs + " />";
+		});
 		
 		// append semi-colon at the end of style value
 		html = html.replace(/style="(.*?)"/mg, function(str, styleStr) {
@@ -1220,6 +1214,9 @@ JSSpec.DSL.Subject.prototype.getType = function() {
  * Utilities
  */
 JSSpec.util = {
+	escapeTags: function(string) {
+		return string.replace(/</img, '&lt;').replace(/>/img, '&gt;');
+	},
 	parseOptions: function(defaults) {
 		var options = defaults;
 		
