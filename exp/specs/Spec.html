@@ -30,16 +30,74 @@ describe('DSL', {
 		
 		expect(typeof JSSpec2.DSL.Given).should_be("function");
 	},
-	'should create an epic with given title': function() {
+	'should create an [epic] with given [title]': function() {
 		expect(JSSpec2.Epics['Account Management']).should_be(undefined);
 		expect(JSSpec2.DSL.Epic('Account Management').title).should_be('Account Management');
 	},
-	'should create given for epic': function() {
+	'should create [givens] for [epic]': function() {
 		var epic = JSSpec2.DSL.Epic('Account Management');
 		var given = JSSpec2.DSL.Given_for_epic({name:'Account', prepare: function() {}, cleanup: function() {}});
 		expect(epic.givens['Account']).should_be(given);
+	},
+	'should create [story] for [epic]': function() {
+	
 	}
 });
+/*
+
+with(JSSpec.DSL) {
+
+Epic('Account management')
+  Given('The account', 'The credit card')
+
+  Story('Customer withdraws cash')
+    As_a('customer')
+    I_want('to withdraw cash from an ATM')
+    So_that('I don\'t have to wait in line at the bank')
+
+    Scenario('Account is in credit')
+      Given('The card is valid', 'The dispenser contains cash')
+      When(function() {
+        // event
+      })
+      Then(function() {
+        // expected outcome
+      })
+
+    Scenario('Account is in credit')
+      Given('The card is valid', 'The dispenser contains cash')
+      When(function() {
+        // event
+      })
+      Then(function() {
+        // expected outcome
+      })
+
+  Story('Customer withdraws cash')
+    As_a('customer')
+    I_want('to withdraw cash from an ATM')
+    So_that('I don\'t have to wait in line at the bank')
+
+    Scenario('Account is in credit')
+      Given('The card is valid', 'The dispenser contains cash')
+      When(function() {
+        // event
+      })
+      Then(function() {
+        // expected outcome
+      })
+
+    Scenario('Account is in credit')
+      Given('The card is valid', 'The dispenser contains cash')
+      When(function() {
+        // event
+      })
+      Then(function() {
+        // expected outcome
+      })
+}
+
+*/
 // ]]></script>
 </body>
 </html>
