@@ -523,7 +523,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		title.onclick = function(e) {
 			var target = document.getElementById(this.parentNode.id + "_examples");
 			target.style.display = target.style.display == "none" ? "block" : "none";
-			return false;
+			return true;
 		}
 	}
 };
