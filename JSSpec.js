@@ -1107,12 +1107,15 @@ JSSpec.DSL.forString = {
 JSSpec.DSL.describe = function(context, entries) {
 	JSSpec.specs.push(new JSSpec.Spec(context, entries));
 }
-JSSpec.DSL.expect = function(target) {
+JSSpec.DSL.value_of = function(target) {
 	if(JSSpec._secondPass) return {}
 	
 	var subject = new JSSpec.DSL.Subject(target);
 	return subject;
 }
+// @deprecated
+// Use JSSpec.DSL.value_of(...)
+JSSpec.DSL.expect = JSSpec.DSL.value_of;
 JSSpec.DSL.Subject = function(target) {
 	this.target = target;
 }
