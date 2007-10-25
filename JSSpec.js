@@ -482,7 +482,21 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 		}(),
 		'</ul>'
 	].join("");
+	
 	container.appendChild(log);
+	
+	// add event handler for toggling
+	var specs = JSSpec.runner.getSpecs();
+	var sb = [];
+	for(var i = 0; i < specs.length; i++) {
+		var spec = document.getElementById("spec_" + specs[i].id);
+		var title = spec.getElementsByTagName("H3")[0];
+		title.onclick = function(e) {
+			var target = document.getElementById(this.parentNode.id + "_examples");
+			target.style.display = target.style.display == "none" ? "block" : "none";
+			return false;
+		}
+	}
 }
 JSSpec.Logger.prototype.onRunnerEnd = function() {
 	if(JSSpec.runner.hasException()) {
