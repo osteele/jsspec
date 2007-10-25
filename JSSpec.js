@@ -28,7 +28,8 @@
 /**
  * Namespace
  */
-JSSpec = {
+
+var JSSpec = {
 	specs: [],
 	
 	EMPTY_FUNCTION: function() {},
@@ -39,7 +40,7 @@ JSSpec = {
 		Gecko: navigator.userAgent.indexOf('Gecko') > -1 && navigator.userAgent.indexOf('KHTML') == -1,
 		Presto: navigator.appName == "Opera"
 	}
-}
+};
 
 
 
@@ -72,9 +73,9 @@ JSSpec.Executor = function(target, onSuccess, onException) {
 			}
 			
 			return true;
-		}
+		};
 	}
-}
+};
 JSSpec.Executor.prototype.mergeExceptions = function(assertionFailure, normalException) {
 	var merged = {
 		message:assertionFailure.message,
@@ -83,7 +84,8 @@ JSSpec.Executor.prototype.mergeExceptions = function(assertionFailure, normalExc
 	};
 	
 	return merged;
-}
+};
+
 JSSpec.Executor.prototype.run = function() {
 	var self = this;
 	var target = this.target;
@@ -92,17 +94,18 @@ JSSpec.Executor.prototype.run = function() {
 	
 	window.setTimeout(
 		function() {
+			var result;
 			if(JSSpec.Browser.Trident) {
 				window._curExecutor = self;
 				
-				var result = self.target();
+				result = self.target();
 				self.onSuccess(self, result);
 			} else {
 				try {
-					var result = self.target();
+					result = self.target();
 					self.onSuccess(self, result);
 				} catch(ex) {
-					if(JSSpec.Browser.Webkit) ex = {message:ex.message, fileName:ex.sourceURL, lineNumber:ex.line}
+					if(JSSpec.Browser.Webkit) ex = {message:ex.message, fileName:ex.sourceURL, lineNumber:ex.line};
 					
 					if(JSSpec._secondPass)  {
 						ex = self.mergeExceptions(JSSpec._assertionFailure, ex);
@@ -122,7 +125,7 @@ JSSpec.Executor.prototype.run = function() {
 		},
 		0
 	);
-}
+};
 
 
 
@@ -134,10 +137,12 @@ JSSpec.CompositeExecutor = function(onSuccess, onException, continueOnException)
 	this.onSuccess = typeof onSuccess == 'function' ? onSuccess : JSSpec.EMPTY_FUNCTION;
 	this.onException = typeof onException == 'function' ? onException : JSSpec.EMPTY_FUNCTION;
 	this.continueOnException = !!continueOnException;
-}
+};
+
 JSSpec.CompositeExecutor.prototype.addFunction = function(func) {
 	this.addExecutor(new JSSpec.Executor(func));
-}
+};
+
 JSSpec.CompositeExecutor.prototype.addExecutor = function(executor) {
 	var last = this.queue.length == 0 ? null : this.queue[this.queue.length - 1];
 	if(last) {
@@ -149,35 +154,34 @@ JSSpec.CompositeExecutor.prototype.addExecutor = function(executor) {
 	executor.onSuccess = function(result) {
 		this.onSuccessBackup(result);
 		if(this.next) {
-			this.next.run()
+			this.next.run();
 		} else {
 			this.parent.onSuccess();
 		}
-	}
+	};
 	executor.onExceptionBackup = executor.onException;
 	executor.onException = function(executor, ex) {
 		this.onExceptionBackup(executor, ex);
 
 		if(this.parent.continueOnException) {
 			if(this.next) {
-				this.next.run()
+				this.next.run();
 			} else {
 				this.parent.onSuccess();
 			}
 		} else {
 			this.parent.onException(executor, ex);
 		}
-	}
+	};
 
 	this.queue.push(executor);
-}
+};
+
 JSSpec.CompositeExecutor.prototype.run = function() {
 	if(this.queue.length > 0) {
 		this.queue[0].run();
 	}
-}
-
-
+};
 
 /**
  * Spec is a set of Examples in a specific context
@@ -191,14 +195,17 @@ JSSpec.Spec = function(context, entries) {
 	this.extractOutSpecialEntries(entries);
 	this.examples = this.makeExamplesFromEntries(entries);
 	this.examplesMap = this.makeMapFromExamples(this.examples);
-}
+};
+
 JSSpec.Spec.id = 0;
 JSSpec.Spec.prototype.getExamples = function() {
 	return this.examples;
-}
+};
+
 JSSpec.Spec.prototype.hasException = function() {
 	return this.getTotalFailures() > 0 || this.getTotalErrors() > 0;
-}
+};
+
 JSSpec.Spec.prototype.getTotalFailures = function() {
 	var examples = this.examples;
 	var failures = 0;
@@ -206,7 +213,8 @@ JSSpec.Spec.prototype.getTotalFailures = function() {
 		if(examples[i].isFailure()) failures++;
 	}
 	return failures;
-}
+};
+
 JSSpec.Spec.prototype.getTotalErrors = function() {
 	var examples = this.examples;
 	var errors = 0;
@@ -214,7 +222,8 @@ JSSpec.Spec.prototype.getTotalErrors = function() {
 		if(examples[i].isError()) errors++;
 	}
 	return errors;
-}
+};
+
 JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
 	var isTrue;
 	for(name in entries) {
@@ -224,7 +233,8 @@ JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
 			if(!isTrue) delete entries[name];
 		}
 	}
-}
+};
+
 JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.beforeEach = JSSpec.EMPTY_FUNCTION;
 	this.beforeAll = JSSpec.EMPTY_FUNCTION;
@@ -232,31 +242,37 @@ JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.afterAll = JSSpec.EMPTY_FUNCTION;
 	
 	for(name in entries) {
-		if(name == 'before' || name == 'before each') {
+		if(name == 'before' || name == 'before each' || name == 'before_each') {
 			this.beforeEach = entries[name];
-		} else if(name == 'before all') {
+		} else if(name == 'before all' || name == 'before_all') {
 			this.beforeAll = entries[name];
-		} else if(name == 'after' || name == 'after each') {
+		} else if(name == 'after' || name == 'after each' || name == 'after_each') {
 			this.afterEach = entries[name];
-		} else if(name == 'after all') {
+		} else if(name == 'after all' || name == 'after_all') {
 			this.afterAll = entries[name];
 		}
 	}
 	
 	delete entries['before'];
 	delete entries['before each'];
+	delete entries['before_each'];
 	delete entries['before all'];
+	delete entries['before_all'];
 	delete entries['after'];
 	delete entries['after each'];
+	delete entries['after_each'];
 	delete entries['after all'];
-}
+	delete entries['after_all'];
+};
+
 JSSpec.Spec.prototype.makeExamplesFromEntries = function(entries) {
 	var examples = [];
 	for(name in entries) {
 		examples.push(new JSSpec.Example(name, entries[name], this.beforeEach, this.afterEach));
 	}
 	return examples;
-}
+};
+
 JSSpec.Spec.prototype.makeMapFromExamples = function(examples) {
 	var map = {};
 	for(var i = 0; i < examples.length; i++) {
@@ -264,16 +280,20 @@ JSSpec.Spec.prototype.makeMapFromExamples = function(examples) {
 		map[example.id] = examples[i];
 	}
 	return map;
-}
+};
+
 JSSpec.Spec.prototype.getExampleById = function(id) {
 	return this.examplesMap[id];
-}
+};
+
 JSSpec.Spec.prototype.getExecutor = function() {
 	var self = this;
-	var onException = function(executor, ex) {self.exception = ex}
+	var onException = function(executor, ex) {
+		self.exception = ex;
+	};
 	
 	var composite = new JSSpec.CompositeExecutor();
-	composite.addFunction(function() {JSSpec.log.onSpecStart(self)});
+	composite.addFunction(function() {JSSpec.log.onSpecStart(self);});
 	composite.addExecutor(new JSSpec.Executor(this.beforeAll, null, function(exec, ex) {
 		self.exception = ex;
 		JSSpec.log.onSpecEnd(self);
@@ -284,13 +304,11 @@ JSSpec.Spec.prototype.getExecutor = function() {
 		exampleAndAfter.addExecutor(this.examples[i].getExecutor());
 	}
 	exampleAndAfter.addExecutor(new JSSpec.Executor(this.afterAll, null, onException));
-	exampleAndAfter.addFunction(function() {JSSpec.log.onSpecEnd(self)});
+	exampleAndAfter.addFunction(function() {JSSpec.log.onSpecEnd(self);});
 	composite.addExecutor(exampleAndAfter);
 	
 	return composite;
-}
-
-
+};
 
 /**
  * Example
@@ -301,22 +319,25 @@ JSSpec.Example = function(name, target, before, after) {
 	this.target = target;
 	this.before = before;
 	this.after = after;
-}
+};
+
 JSSpec.Example.id = 0;
 JSSpec.Example.prototype.isFailure = function() {
 	return this.exception && this.exception.type == "failure";
-}
+};
+
 JSSpec.Example.prototype.isError = function() {
 	return this.exception && !this.exception.type;
-}
+};
+
 JSSpec.Example.prototype.getExecutor = function() {
 	var self = this;
 	var onException = function(executor, ex) {
-		self.exception = ex
-	}
+		self.exception = ex;
+	};
 	
 	var composite = new JSSpec.CompositeExecutor();
-	composite.addFunction(function() {JSSpec.log.onExampleStart(self)});
+	composite.addFunction(function() {JSSpec.log.onExampleStart(self);});
 	composite.addExecutor(new JSSpec.Executor(this.before, null, function(exec, ex) {
 		self.exception = ex;
 		JSSpec.log.onExampleEnd(self);
@@ -326,14 +347,12 @@ JSSpec.Example.prototype.getExecutor = function() {
 	
 	targetAndAfter.addExecutor(new JSSpec.Executor(this.target, null, onException));
 	targetAndAfter.addExecutor(new JSSpec.Executor(this.after, null, onException));
-	targetAndAfter.addFunction(function() {JSSpec.log.onExampleEnd(self)});
+	targetAndAfter.addFunction(function() {JSSpec.log.onExampleEnd(self);});
 	
 	composite.addExecutor(targetAndAfter);
 	
 	return composite;
-}
-
-
+};
 
 /**
  * Runner
@@ -345,32 +364,39 @@ JSSpec.Runner = function(specs, logger) {
 	this.specs = [];
 	this.specsMap = {};
 	this.addAllSpecs(specs);
-}
+};
+
 JSSpec.Runner.prototype.addAllSpecs = function(specs) {
 	for(var i = 0; i < specs.length; i++) {
 		this.addSpec(specs[i]);
 	}
-}
+};
+
 JSSpec.Runner.prototype.addSpec = function(spec) {
 	this.specs.push(spec);
 	this.specsMap[spec.id] = spec;
 	this.totalExamples += spec.getExamples().length;
-}
+};
+
 JSSpec.Runner.prototype.getSpecById = function(id) {
 	return this.specsMap[id];
-}
+};
+
 JSSpec.Runner.prototype.getSpecByContext = function(context) {
 	for(var i = 0; i < this.specs.length; i++) {
 		if(this.specs[i].context == context) return this.specs[i];
 	}
 	return null;
-}
+};
+
 JSSpec.Runner.prototype.getSpecs = function() {
 	return this.specs;
-}
+};
+
 JSSpec.Runner.prototype.hasException = function() {
 	return this.getTotalFailures() > 0 || this.getTotalErrors() > 0;
-}
+};
+
 JSSpec.Runner.prototype.getTotalFailures = function() {
 	var specs = this.specs;
 	var failures = 0;
@@ -378,7 +404,8 @@ JSSpec.Runner.prototype.getTotalFailures = function() {
 		failures += specs[i].getTotalFailures();
 	}
 	return failures;
-}
+};
+
 JSSpec.Runner.prototype.getTotalErrors = function() {
 	var specs = this.specs;
 	var errors = 0;
@@ -386,7 +413,8 @@ JSSpec.Runner.prototype.getTotalErrors = function() {
 		errors += specs[i].getTotalErrors();
 	}
 	return errors;
-}
+};
+
 
 JSSpec.Runner.prototype.run = function() {
 	JSSpec.log.onRunnerStart();
@@ -395,12 +423,13 @@ JSSpec.Runner.prototype.run = function() {
 		executor.addExecutor(this.specs[i].getExecutor());
 	}
 	executor.run();
-}
+};
+
 
 JSSpec.Runner.prototype.rerun = function(context) {
 	JSSpec.runner = new JSSpec.Runner([this.getSpecByContext(context)], JSSpec.log);
 	JSSpec.runner.run();
-}
+};
 
 /**
  * Logger
@@ -408,11 +437,11 @@ JSSpec.Runner.prototype.rerun = function(context) {
 JSSpec.Logger = function() {
 	this.finishedExamples = 0;
 	this.startedAt = null;
-}
+};
 
 JSSpec.Logger.prototype.onRunnerStart = function() {
 	this._title = document.title;
-	
+
 	this.startedAt = new Date();
 	var container = document.getElementById('jsspec_container');
 	if(container) {
@@ -497,7 +526,8 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			return false;
 		}
 	}
-}
+};
+
 JSSpec.Logger.prototype.onRunnerEnd = function() {
 	if(JSSpec.runner.hasException()) {
 		var times = 4;
@@ -509,7 +539,8 @@ JSSpec.Logger.prototype.onRunnerEnd = function() {
 		var title2 = "Success";
 	}
 	this.blinkTitle(times,title1,title2);
-}
+};
+
 JSSpec.Logger.prototype.blinkTitle = function(times, title1, title2) {
 	var times = times * 2;
 	var mode = true;
@@ -523,17 +554,19 @@ JSSpec.Logger.prototype.blinkTitle = function(times, title1, title2) {
 		} else {
 			document.title = title1;
 		}
-	}
+	};
 	
 	f();
-}
+};
+
 JSSpec.Logger.prototype.onSpecStart = function(spec) {
 	var spec_list = document.getElementById("spec_" + spec.id + "_list");
 	var spec_log = document.getElementById("spec_" + spec.id);
 	
 	spec_list.className = "ongoing";
 	spec_log.className = "ongoing";
-}
+};
+
 JSSpec.Logger.prototype.onSpecEnd = function(spec) {
 	var spec_list = document.getElementById("spec_" + spec.id + "_list");
 	var spec_log = document.getElementById("spec_" + spec.id);
@@ -548,11 +581,13 @@ JSSpec.Logger.prototype.onSpecEnd = function(spec) {
 	if(spec.exception) {
 		heading.appendChild(document.createTextNode(" - " + spec.exception.message));
 	}
-}
+};
+
 JSSpec.Logger.prototype.onExampleStart = function(example) {
 	var li = document.getElementById("example_" + example.id);
 	li.className = "ongoing";
-}
+};
+
 JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	var li = document.getElementById("example_" + example.id);
 	li.className = example.exception ? "exception" : "success";
@@ -576,9 +611,7 @@ JSSpec.Logger.prototype.onExampleEnd = function(example) {
 	document.getElementById("total_elapsed").innerHTML = (new Date().getTime() - this.startedAt.getTime()) / 1000;
 	
 	document.title = progress + "%: " + this._title;
-}
-
-
+};
 
 /**
  * IncludeMatcher
@@ -589,23 +622,28 @@ JSSpec.IncludeMatcher = function(actual, expected, condition) {
 	this.condition = condition;
 	this.match = false;
 	this.explaination = this.makeExplain();
-}
+};
+
 JSSpec.IncludeMatcher.createInstance = function(actual, expected, condition) {
 	return new JSSpec.IncludeMatcher(actual, expected, condition);
-}
+};
+
 JSSpec.IncludeMatcher.prototype.matches = function() {
 	return this.match;
-}
+};
+
 JSSpec.IncludeMatcher.prototype.explain = function() {
 	return this.explaination;
-}
+};
+
 JSSpec.IncludeMatcher.prototype.makeExplain = function() {
 	if(typeof this.actual.length == 'undefined') {
 		return this.makeExplainForNotArray();
 	} else {
 		return this.makeExplainForArray();
 	}
-}
+};
+
 JSSpec.IncludeMatcher.prototype.makeExplainForNotArray = function() {
 	var sb = [];
 	sb.push('<p>actual value:</p>');
@@ -615,10 +653,12 @@ JSSpec.IncludeMatcher.prototype.makeExplainForNotArray = function() {
 	sb.push('<p>but since it\s not an array, include or not doesn\'t make any sense.</p>');
 	return sb.join("");
 }
+;
 JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
+	var matches;
 	if(this.condition) {
 		for(var i = 0; i < this.actual.length; i++) {
-			var matches = JSSpec.EqualityMatcher.createInstance(this.expected, this.actual[i]).matches();
+			matches = JSSpec.EqualityMatcher.createInstance(this.expected, this.actual[i]).matches();
 			if(matches) {
 				this.match = true;
 				break;
@@ -626,7 +666,7 @@ JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
 		}
 	} else {
 		for(var i = 0; i < this.actual.length; i++) {
-			var matches = JSSpec.EqualityMatcher.createInstance(this.expected, this.actual[i]).matches();
+			matches = JSSpec.EqualityMatcher.createInstance(this.expected, this.actual[i]).matches();
 			if(matches) {
 				this.match = false;
 				break;
@@ -642,10 +682,7 @@ JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
 	sb.push('<p>should ' + (this.condition ? '' : 'not') + ' include:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
 	return sb.join("");
-}
-
-
-
+};
 
 /**
  * PropertyLengthMatcher
@@ -668,7 +705,8 @@ JSSpec.PropertyLengthMatcher = function(num, property, o, condition) {
 	};
 	this.match = false;
 	this.explaination = this.makeExplain();
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.makeExplain = function() {
 	if(this.o._type == 'String' && this.property == 'length') {
 		this.match = this.conditionMet(this.o);
@@ -685,7 +723,8 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplain = function() {
 	}
 
 	this.match = true;
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.makeExplainForString = function() {
 	var sb = [];
 	
@@ -698,7 +737,8 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForString = function() {
 	sb.push('<p>but it should ' + exp + '.</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.makeExplainForArray = function() {
 	var sb = [];
 	
@@ -711,7 +751,8 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForArray = function() {
 	sb.push('<p>but it should ' + exp + '.</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.makeExplainForObject = function() {
 	var sb = [];
 
@@ -724,7 +765,8 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForObject = function() {
 	sb.push('<p>but it should ' + exp + '.</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.makeExplainForNoProperty = function() {
 	var sb = [];
 	
@@ -733,27 +775,29 @@ JSSpec.PropertyLengthMatcher.prototype.makeExplainForNoProperty = function() {
 	sb.push('<p>should have <strong>' + this.condition + ' ' + this.num + ' ' + this.property + '</strong> but there\'s no such property.</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.matches = function() {
 	return this.match;
-}
+};
+
 JSSpec.PropertyLengthMatcher.prototype.explain = function() {
 	return this.explaination;
-}
+};
+
 JSSpec.PropertyLengthMatcher.createInstance = function(num, property, o, condition) {
 	return new JSSpec.PropertyLengthMatcher(num, property, o, condition);
-}
-
-
+};
 
 /**
  * EqualityMatcher
  */
-JSSpec.EqualityMatcher = {}
+JSSpec.EqualityMatcher = {};
+
 JSSpec.EqualityMatcher.createInstance = function(expected, actual) {
 	if(expected == null || actual == null) {
 		return new JSSpec.NullEqualityMatcher(expected, actual);
-	} else if(expected._type == actual._type) {
+	} else if(expected._type && expected._type == actual._type) {
 		if(expected._type == "String") {
 			return new JSSpec.StringEqualityMatcher(expected, actual);
 		} else if(expected._type == "Date") {
@@ -768,7 +812,8 @@ JSSpec.EqualityMatcher.createInstance = function(expected, actual) {
 	}
 	
 	return new JSSpec.ObjectEqualityMatcher(expected, actual);
-}
+};
+
 JSSpec.EqualityMatcher.basicExplain = function(expected, actual, expectedDesc, actualDesc) {
 	var sb = [];
 	
@@ -778,7 +823,8 @@ JSSpec.EqualityMatcher.basicExplain = function(expected, actual, expectedDesc, a
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(expected) + '</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.EqualityMatcher.diffExplain = function(expected, actual) {
 	var sb = [];
 
@@ -794,9 +840,7 @@ JSSpec.EqualityMatcher.diffExplain = function(expected, actual) {
 	sb.push('</p>');
 	
 	return sb.join("");
-}
-
-
+};
 
 /**
  * BooleanEqualityMatcher
@@ -804,7 +848,8 @@ JSSpec.EqualityMatcher.diffExplain = function(expected, actual) {
 JSSpec.BooleanEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
-}
+};
+
 JSSpec.BooleanEqualityMatcher.prototype.explain = function() {
 	var sb = [];
 	
@@ -814,12 +859,11 @@ JSSpec.BooleanEqualityMatcher.prototype.explain = function() {
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.BooleanEqualityMatcher.prototype.matches = function() {
 	return this.expected == this.actual;
-}
-
-
+};
 
 /**
  * NullEqualityMatcher
@@ -827,23 +871,25 @@ JSSpec.BooleanEqualityMatcher.prototype.matches = function() {
 JSSpec.NullEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
-}
+};
+
 JSSpec.NullEqualityMatcher.prototype.matches = function() {
 	return this.expected == this.actual && typeof this.expected == typeof this.actual;
-}
+};
+
 JSSpec.NullEqualityMatcher.prototype.explain = function() {
 	return JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual);
-}
-
-
+};
 
 JSSpec.DateEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
-}
+};
+
 JSSpec.DateEqualityMatcher.prototype.matches = function() {
 	return this.expected.getTime() == this.actual.getTime();
-}
+};
+
 JSSpec.DateEqualityMatcher.prototype.explain = function() {
 	var sb = [];
 	
@@ -851,9 +897,7 @@ JSSpec.DateEqualityMatcher.prototype.explain = function() {
 	sb.push(JSSpec.EqualityMatcher.diffExplain(this.expected.toString(), this.actual.toString()));
 
 	return sb.join("");
-}
-
-
+};
 
 /**
  * ObjectEqualityMatcher
@@ -863,9 +907,12 @@ JSSpec.ObjectEqualityMatcher = function(expected, actual) {
 	this.actual = actual;
 	this.match = this.expected == this.actual;
 	this.explaination = this.makeExplain();
-}
-JSSpec.ObjectEqualityMatcher.prototype.matches = function() {return this.match}
-JSSpec.ObjectEqualityMatcher.prototype.explain = function() {return this.explaination}
+};
+
+JSSpec.ObjectEqualityMatcher.prototype.matches = function() {return this.match};
+
+JSSpec.ObjectEqualityMatcher.prototype.explain = function() {return this.explaination};
+
 JSSpec.ObjectEqualityMatcher.prototype.makeExplain = function() {
 	if(this.expected == this.actual) {
 		this.match = true;
@@ -876,31 +923,35 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplain = function() {
 		return this.makeExplainForDomNode();
 	}
 	
-	for(var key in this.expected) {
-		var expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
-		var actualHasItem = this.actual[key] != null && typeof this.actual[key] != 'undefined';
+	var key, expectedHasItem, actualHasItem;
+
+	for(key in this.expected) {
+		expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
+		actualHasItem = this.actual[key] != null && typeof this.actual[key] != 'undefined';
 		if(expectedHasItem && !actualHasItem) return this.makeExplainForMissingItem(key);
 	}
-	for(var key in this.actual) {
-		var expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
-		var actualHasItem = this.actual[key] != null && typeof this.actual[key] != 'undefined';
+	for(key in this.actual) {
+		expectedHasItem = this.expected[key] != null && typeof this.expected[key] != 'undefined';
+		actualHasItem = this.actual[key] != null && typeof this.actual[key] != 'undefined';
 		if(actualHasItem && !expectedHasItem) return this.makeExplainForUnknownItem(key);
 	}
 	
-	for(var key in this.expected) {
+	for(key in this.expected) {
 		var matcher = JSSpec.EqualityMatcher.createInstance(this.expected[key], this.actual[key]);
 		if(!matcher.matches()) return this.makeExplainForItemMismatch(key);
 	}
 		
 	this.match = true;
-}
+};
+
 JSSpec.ObjectEqualityMatcher.prototype.makeExplainForDomNode = function(key) {
 	var sb = [];
 	
 	sb.push(JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual));
 	
 	return sb.join("");
-}
+};
+
 JSSpec.ObjectEqualityMatcher.prototype.makeExplainForMissingItem = function(key) {
 	var sb = [];
 
@@ -910,7 +961,8 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplainForMissingItem = function(key)
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, key) + '</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.ObjectEqualityMatcher.prototype.makeExplainForUnknownItem = function(key) {
 	var sb = [];
 
@@ -920,7 +972,8 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplainForUnknownItem = function(key)
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, key) + '</p>');
 	
 	return sb.join("");
-}
+};
+
 JSSpec.ObjectEqualityMatcher.prototype.makeExplainForItemMismatch = function(key) {
 	var sb = [];
 
@@ -930,7 +983,8 @@ JSSpec.ObjectEqualityMatcher.prototype.makeExplainForItemMismatch = function(key
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, key) + '</p>');
 	
 	return sb.join("");
-}
+};
+
 
 
 
@@ -942,9 +996,12 @@ JSSpec.ArrayEqualityMatcher = function(expected, actual) {
 	this.actual = actual;
 	this.match = this.expected == this.actual;
 	this.explaination = this.makeExplain();
-}
-JSSpec.ArrayEqualityMatcher.prototype.matches = function() {return this.match}
-JSSpec.ArrayEqualityMatcher.prototype.explain = function() {return this.explaination}
+};
+
+JSSpec.ArrayEqualityMatcher.prototype.matches = function() {return this.match};
+
+JSSpec.ArrayEqualityMatcher.prototype.explain = function() {return this.explaination};
+
 JSSpec.ArrayEqualityMatcher.prototype.makeExplain = function() {
 	if(this.expected.length != this.actual.length) return this.makeExplainForLengthMismatch();
 	
@@ -954,7 +1011,8 @@ JSSpec.ArrayEqualityMatcher.prototype.makeExplain = function() {
 	}
 		
 	this.match = true;
-}
+};
+
 JSSpec.ArrayEqualityMatcher.prototype.makeExplainForLengthMismatch = function() {
 	return JSSpec.EqualityMatcher.basicExplain(
 		this.expected,
@@ -962,7 +1020,8 @@ JSSpec.ArrayEqualityMatcher.prototype.makeExplainForLengthMismatch = function() 
 		'<p>but it should be <strong>' + this.expected.length + '</strong></p>',
 		'<p>actual value has <strong>' + this.actual.length + '</strong> items</p>'
 	);
-}
+};
+
 JSSpec.ArrayEqualityMatcher.prototype.makeExplainForItemMismatch = function(index) {
 	var postfix = ["th", "st", "nd", "rd", "th"][Math.min((index + 1) % 10,4)];
 	
@@ -974,9 +1033,7 @@ JSSpec.ArrayEqualityMatcher.prototype.makeExplainForItemMismatch = function(inde
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected, false, index) + '</p>');
 	
 	return sb.join("");
-}
-
-
+};
 
 /**
  * NumberEqualityMatcher
@@ -984,15 +1041,15 @@ JSSpec.ArrayEqualityMatcher.prototype.makeExplainForItemMismatch = function(inde
 JSSpec.NumberEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
-}
+};
+
 JSSpec.NumberEqualityMatcher.prototype.matches = function() {
 	if(this.expected == this.actual) return true;
-}
+};
+
 JSSpec.NumberEqualityMatcher.prototype.explain = function() {
 	return JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual);
-}
-
-
+};
 
 /**
  * StringEqualityMatcher
@@ -1000,19 +1057,19 @@ JSSpec.NumberEqualityMatcher.prototype.explain = function() {
 JSSpec.StringEqualityMatcher = function(expected, actual) {
 	this.expected = expected;
 	this.actual = actual;
-}
+};
+
 JSSpec.StringEqualityMatcher.prototype.matches = function() {
 	if(this.expected == this.actual) return true;
-}
+};
+
 JSSpec.StringEqualityMatcher.prototype.explain = function() {
 	var sb = [];
 
 	sb.push(JSSpec.EqualityMatcher.basicExplain(this.expected, this.actual));
 	sb.push(JSSpec.EqualityMatcher.diffExplain(this.expected, this.actual));	
 	return sb.join("");
-}
-
-
+};
 
 /**
  * PatternMatcher
@@ -1023,13 +1080,16 @@ JSSpec.PatternMatcher = function(actual, pattern, condition) {
 	this.condition = condition;
 	this.match = false;
 	this.explaination = this.makeExplain();
-}
+};
+
 JSSpec.PatternMatcher.createInstance = function(actual, pattern, condition) {
 	return new JSSpec.PatternMatcher(actual, pattern, condition);
-}
+};
+
 JSSpec.PatternMatcher.prototype.makeExplain = function() {
+	var sb;
 	if(this.actual == null || this.actual._type != 'String') {
-		var sb = [];
+		sb = [];
 		sb.push('<p>actual value:</p>');
 		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
 		sb.push('<p>should ' + (this.condition ? '' : 'not') + ' match with pattern:</p>');
@@ -1040,23 +1100,22 @@ JSSpec.PatternMatcher.prototype.makeExplain = function() {
 		this.match = this.condition == !!this.actual.match(this.pattern);
 		if(this.match) return "";
 		
-		var sb = [];
+		sb = [];
 		sb.push('<p>actual value:</p>');
 		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
 		sb.push('<p>should ' + (this.condition ? '' : 'not') + ' match with pattern:</p>');
 		sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.pattern) + '</p>');
 		return sb.join("");
 	}
-	
-}
+};
+
 JSSpec.PatternMatcher.prototype.matches = function() {
 	return this.match;
-}
+};
+
 JSSpec.PatternMatcher.prototype.explain = function() {
 	return this.explaination;
-}
-
-
+};
 
 /**
  * Domain Specific Languages
@@ -1071,7 +1130,7 @@ JSSpec.DSL.forString = {
 		html = html.replace(/<(\/?)(\w+)([^>]*?)>/img, function(str, closingMark, tagName, attrs) {
 			var sortedAttrs = JSSpec.util.sortHtmlAttrs(JSSpec.util.correctHtmlAttrQuotation(attrs).toLowerCase())
 			return "<" + closingMark + tagName.toLowerCase() + sortedAttrs + ">"
-		})
+		});
 		
 		// validation self-closing tags
 		html = html.replace(/<(br|hr|img)([^>]*?)>/mg, function(str, tag, attrs) {
@@ -1084,50 +1143,53 @@ JSSpec.DSL.forString = {
 			if(styleStr.charAt(styleStr.length - 1) != ';') styleStr += ";"
 			
 			return 'style="' + styleStr + '"'
-		})
+		});
 		
 		// sort style entries
 		
 		// remove empty style attributes
-		html = html.replace(/ style=";"/mg, "")
+		html = html.replace(/ style=";"/mg, "");
 		
 		// remove new-lines
-		html = html.replace(/\r/mg, '')
-		html = html.replace(/\n/mg, '')
-		
-		// TODO remove this?
-		//html = html.replace(/(>[^<>]*?)\s+([^<>]*?<)/mg, '$1$2')
+		html = html.replace(/\r/mg, '');
+		html = html.replace(/\n/mg, '');
 			
 		return html;
 	}
-}
+};
 
 
 
 JSSpec.DSL.describe = function(context, entries) {
 	JSSpec.specs.push(new JSSpec.Spec(context, entries));
-}
+};
+
 JSSpec.DSL.value_of = function(target) {
-	if(JSSpec._secondPass) return {}
+	if(JSSpec._secondPass) return {};
 	
 	var subject = new JSSpec.DSL.Subject(target);
 	return subject;
-}
+};
+
 JSSpec.DSL.Subject = function(target) {
 	this.target = target;
-}
+};
+
 JSSpec.DSL.Subject.prototype._type = 'Subject';
+
 JSSpec.DSL.Subject.prototype.should_fail = function(message) {
 	JSSpec._assertionFailure = {message:message};
 	throw JSSpec._assertionFailure;
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_be = function(expected) {
 	var matcher = JSSpec.EqualityMatcher.createInstance(expected, this.target);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_not_be = function(expected) {
 	// TODO JSSpec.EqualityMatcher should support 'condition'
 	var matcher = JSSpec.EqualityMatcher.createInstance(expected, this.target);
@@ -1135,64 +1197,80 @@ JSSpec.DSL.Subject.prototype.should_not_be = function(expected) {
 		JSSpec._assertionFailure = {message:"'" + this.target + "' should not be '" + expected + "'"};
 		throw JSSpec._assertionFailure;
 	}
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_be_empty = function() {
 	this.should_have(0, this.getType() == 'String' ? 'characters' : 'items');
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_not_be_empty = function() {
 	this.should_have_at_least(1, this.getType() == 'String' ? 'characters' : 'items');
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_be_true = function() {
 	this.should_be(true);
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_be_false = function() {
 	this.should_be(false);
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_be_null = function() {
 	this.should_be(null);
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_be_undefined = function() {
 	this.should_be(undefined);
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_not_be_null = function() {
 	this.should_not_be(null);
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_not_be_undefined = function() {
 	this.should_not_be(undefined);
-}
+};
+
 JSSpec.DSL.Subject.prototype._should_have = function(num, property, condition) {
 	var matcher = JSSpec.PropertyLengthMatcher.createInstance(num, property, this.target, condition);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_have = function(num, property) {
 	this._should_have(num, property, "exactly");
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_have_exactly = function(num, property) {
 	this._should_have(num, property, "exactly");
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_have_at_least = function(num, property) {
 	this._should_have(num, property, "at least");
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_have_at_most = function(num, property) {
 	this._should_have(num, property, "at most");
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_include = function(expected) {
 	var matcher = JSSpec.IncludeMatcher.createInstance(this.target, expected, true);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_not_include = function(expected) {
 	var matcher = JSSpec.IncludeMatcher.createInstance(this.target, expected, false);
 	if(!matcher.matches()) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-}
+};
+
 JSSpec.DSL.Subject.prototype.should_match = function(pattern) {
 	var matcher = JSSpec.PatternMatcher.createInstance(this.target, pattern, true);
 	if(!matcher.matches()) {
@@ -1206,7 +1284,7 @@ JSSpec.DSL.Subject.prototype.should_not_match = function(pattern) {
 		JSSpec._assertionFailure = {message:matcher.explain()};
 		throw JSSpec._assertionFailure;
 	}
-}
+};
 
 JSSpec.DSL.Subject.prototype.getType = function() {
 	if(typeof this.target == 'undefined') {
@@ -1220,9 +1298,7 @@ JSSpec.DSL.Subject.prototype.getType = function() {
 	} else {
 		return 'object';
 	}
-}
-
-
+};
 
 /**
  * Utilities
@@ -1248,17 +1324,17 @@ JSSpec.util = {
 		return options;
 	},
 	correctHtmlAttrQuotation: function(html) {
-		html = html.replace(/(\w+)=['"]([^'"]+)['"]/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
-		html = html.replace(/(\w+)=([^ '"]+)/mg,function (str, name, value) {return name + '=' + '"' + value + '"'});
+		html = html.replace(/(\w+)=['"]([^'"]+)['"]/mg,function (str, name, value) {return name + '=' + '"' + value + '"';});
+		html = html.replace(/(\w+)=([^ '"]+)/mg,function (str, name, value) {return name + '=' + '"' + value + '"';});
 		html = html.replace(/'/mg, '"');
 		
 		return html;
 	},
 	sortHtmlAttrs: function(html) {
-		var attrs = []
+		var attrs = [];
 		html.replace(/((\w+)="[^"]+")/mg, function(str, matched) {
 			attrs.push(matched);
-		})
+		});
 		return attrs.length == 0 ? "" : " " + attrs.sort().join(" ");
 	},
 	sortStyleEntries: function(styleText) {
@@ -1325,6 +1401,8 @@ JSSpec.util = {
 		}
 	},
 	inspect: function(o, dontEscape, emphasisKey) {
+		var sb, inspected;
+
 		if(typeof o == 'undefined') return '<span class="undefined_value">undefined</span>';
 		if(o == null) return '<span class="null_value">null</span>';
 		if(o._type == 'String') return '<span class="string_value">"' + (dontEscape ? o : JSSpec.util.escapeHtml(o)) + '"</span>';
@@ -1342,29 +1420,30 @@ JSSpec.util = {
 		if(JSSpec.util.isDomNode(o)) return JSSpec.util.inspectDomNode(o);
 
 		if(o._type == 'Array' || typeof o.length != 'undefined') {
-			var sb = [];
+			sb = [];
 			for(var i = 0; i < o.length; i++) {
-				var inspected = JSSpec.util.inspect(o[i]);
+				inspected = JSSpec.util.inspect(o[i]);
 				sb.push(i == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
 			}
 			return '<span class="array_value">[' + sb.join(', ') + ']</span>';
 		}
 		
 		// object
-		var sb = [];
+		sb = [];
 		for(var key in o) {
 			if(key == 'should') continue;
 			
-			var inspected = JSSpec.util.inspect(key) + ":" + JSSpec.util.inspect(o[key]);
+			inspected = JSSpec.util.inspect(key) + ":" + JSSpec.util.inspect(o[key]);
 			sb.push(key == emphasisKey ? ('<strong>' + inspected + '</strong>') : inspected);
 		}
 		return '<span class="object_value">{' + sb.join(', ') + '}</span>';
 	}
-}
+};
 
 describe = JSSpec.DSL.describe;
+behavior_of = JSSpec.DSL.describe;
 value_of = JSSpec.DSL.value_of;
-expect = JSSpec.DSL.value_of;
+expect = JSSpec.DSL.value_of; // @deprecated
 
 String.prototype._type = "String";
 Number.prototype._type = "Number";
@@ -1376,7 +1455,7 @@ RegExp.prototype._type = "RegExp";
 var targets = [Array.prototype, Date.prototype, Number.prototype, String.prototype, Boolean.prototype, RegExp.prototype];
 
 String.prototype.normalizeHtml = JSSpec.DSL.forString.normalizeHtml;
-String.prototype.asHtml = String.prototype.normalizeHtml;
+String.prototype.asHtml = String.prototype.normalizeHtml; //@deprecated
 
 
 
