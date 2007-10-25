@@ -14,30 +14,30 @@ describe('DSL', {
 	'before': function() {
 	},
 	'should contains all vocabularies': function() {
-		expect(typeof JSSpec2.DSL.Epic).should_be("function");
-		expect(typeof JSSpec2.DSL.Given_for_epic).should_be("function");
+		value_of(typeof JSSpec2.DSL.Epic).should_be("function");
+		value_of(typeof JSSpec2.DSL.Given_for_epic).should_be("function");
 		
-		expect(typeof JSSpec2.DSL.Story).should_be("function");
-		expect(typeof JSSpec2.DSL.Given_for_story).should_be("function");
-		expect(typeof JSSpec2.DSL.As_a).should_be("function");
-		expect(typeof JSSpec2.DSL.I_want).should_be("function");
-		expect(typeof JSSpec2.DSL.So_that).should_be("function");
+		value_of(typeof JSSpec2.DSL.Story).should_be("function");
+		value_of(typeof JSSpec2.DSL.Given_for_story).should_be("function");
+		value_of(typeof JSSpec2.DSL.As_a).should_be("function");
+		value_of(typeof JSSpec2.DSL.I_want).should_be("function");
+		value_of(typeof JSSpec2.DSL.So_that).should_be("function");
 		
-		expect(typeof JSSpec2.DSL.Scenario).should_be("function");
-		expect(typeof JSSpec2.DSL.Given_for_scenario).should_be("function");
-		expect(typeof JSSpec2.DSL.When).should_be("function");
-		expect(typeof JSSpec2.DSL.Then).should_be("function");
+		value_of(typeof JSSpec2.DSL.Scenario).should_be("function");
+		value_of(typeof JSSpec2.DSL.Given_for_scenario).should_be("function");
+		value_of(typeof JSSpec2.DSL.When).should_be("function");
+		value_of(typeof JSSpec2.DSL.Then).should_be("function");
 		
-		expect(typeof JSSpec2.DSL.Given).should_be("function");
+		value_of(typeof JSSpec2.DSL.Given).should_be("function");
 	},
 	'should create an [epic] with given [title]': function() {
-		expect(JSSpec2.Epics['Account Management']).should_be(undefined);
-		expect(JSSpec2.DSL.Epic('Account Management').title).should_be('Account Management');
+		value_of(JSSpec2.Epics['Account Management']).should_be(undefined);
+		value_of(JSSpec2.DSL.Epic('Account Management').title).should_be('Account Management');
 	},
 	'should create [givens] for [epic]': function() {
 		var epic = JSSpec2.DSL.Epic('Account Management');
 		var given = JSSpec2.DSL.Given_for_epic({name:'Account', prepare: function() {}, cleanup: function() {}});
-		expect(epic.givens['Account']).should_be(given);
+		value_of(epic.givens['Account']).should_be(given);
 	},
 	'should create [story] for [epic]': function() {
 	

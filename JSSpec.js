@@ -1113,9 +1113,6 @@ JSSpec.DSL.value_of = function(target) {
 	var subject = new JSSpec.DSL.Subject(target);
 	return subject;
 }
-// @deprecated
-// Use JSSpec.DSL.value_of(...)
-JSSpec.DSL.expect = JSSpec.DSL.value_of;
 JSSpec.DSL.Subject = function(target) {
 	this.target = target;
 }
@@ -1366,7 +1363,8 @@ JSSpec.util = {
 }
 
 describe = JSSpec.DSL.describe;
-expect = JSSpec.DSL.expect;
+value_of = JSSpec.DSL.value_of;
+expect = JSSpec.DSL.value_of;
 
 String.prototype._type = "String";
 Number.prototype._type = "Number";
