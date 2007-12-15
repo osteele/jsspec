@@ -455,7 +455,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 	var title = document.createElement("DIV");
 	title.id = "title";
 	title.innerHTML = [
-		'<h1>JSSpec runner</h1>',
+		'<h1>JSSpec runner [<a href="?">rerun all</a>]</h1>',
 		'<ul>',
 		'	<li><span id="total_examples">' + JSSpec.runner.totalExamples + '</span> examples</li>',
 		'	<li><span id="total_failures">0</span> failures</li>',
