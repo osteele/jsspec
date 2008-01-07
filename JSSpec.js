@@ -646,12 +646,17 @@ JSSpec.IncludeMatcher.prototype.makeExplain = function() {
 };
 
 JSSpec.IncludeMatcher.prototype.makeExplainForNotArray = function() {
+	if(this.condition) {
+		this.match = !!this.actual[this.expected];
+	} else {
+		this.match = !this.actual[this.expected];
+	}
+	
 	var sb = [];
 	sb.push('<p>actual value:</p>');
-	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual) + '</p>');
+	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.actual, false, this.expected) + '</p>');
 	sb.push('<p>should ' + (this.condition ? '' : 'not') + ' include:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
-	sb.push('<p>but since it\s not an array, include or not doesn\'t make any sense.</p>');
 	return sb.join("");
 }
 ;

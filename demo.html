@@ -44,7 +44,10 @@ describe('"Should include"s', {
 		value_of(new Date()).should_include(4);
 	},
 	'Should not include / Non-array object': function() {
-		value_of(new Date()).should_not_include(4);
+		value_of(new Date()).should_not_include('getMonth');
+	},
+	'Should include 2': function() {
+		value_of({a:1, b:2}).should_not_include('a');
 	}
 })
 
@@ -69,6 +72,10 @@ describe('"Should have"s', {
 	},
 	'At most': function() {
 		value_of([1,2,3]).should_have_at_most(2, "items");
+	},
+	'Member': function() {
+		value_of({x: 0}).should_have_member('x'); // true
+		value_of({x: 0}).should_have_member('y'); // false
 	}
 })
 describe('"Should be empty"s', {
