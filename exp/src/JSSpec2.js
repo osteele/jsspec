@@ -24,34 +24,3 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
- 
-JSSpec2 = {
-	DSL: {
-		Epic: function(title) {
-			var epic = new JSSpec2.Epic();
-			epic.title = title;
-			JSSpec2.Epics[title] = epic;
-			return epic;
-		},
-		Given_for_epic: function() {
-		},
-		
-		Story: function() {},
-		Given_for_story: function() {},
-		As_a: function() {},
-		I_want: function() {},
-		So_that: function() {},
-		
-		Scenario: function() {},
-		Given_for_scenario: function() {},
-		When: function() {},
-		Then: function() {},
-		
-		Given: function() {}
-	},
-	
-	Epics: {}
-}
-
-JSSpec2.Epic = function() {
-}

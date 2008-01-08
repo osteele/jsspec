@@ -1,0 +1,5 @@
+<project name="jsspec2" default="test" basedir=".">
+	<property file="build.properties" />
+	
+	<target name="test"></target>
+</project>
