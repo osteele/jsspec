@@ -1,5 +1,9 @@
 <project name="jsspec2" default="test" basedir=".">
 	<property file="build.properties" />
-	
-	<target name="test"></target>
+
+	<target name="test">
+		<java jar="lib/js.jar" fork="true">
+			<arg line="-f src/RhinoRunner.js" />
+		</java>
+	</target>
 </project>
