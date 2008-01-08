@@ -658,8 +658,8 @@ JSSpec.IncludeMatcher.prototype.makeExplainForNotArray = function() {
 	sb.push('<p>should ' + (this.condition ? '' : 'not') + ' include:</p>');
 	sb.push('<p style="margin-left:2em;">' + JSSpec.util.inspect(this.expected) + '</p>');
 	return sb.join("");
-}
-;
+};
+
 JSSpec.IncludeMatcher.prototype.makeExplainForArray = function() {
 	var matches;
 	if(this.condition) {
