@@ -6,6 +6,7 @@ with(JSSpec2) {
 	story("Core functions")
 	
 	scenario("Scenario execution")
+
 	given({
 		"plain scenario": [
 		function() {
@@ -53,8 +54,8 @@ with(JSSpec2) {
 			value_of(this.scenario.context.d).should_be(4)
 		}
 	})
-	
-	
+
+
 	
 	scenario("Cleanup")
 	given({
@@ -89,7 +90,7 @@ with(JSSpec2) {
 	})
 	then({
 		"'givens' should be cleaned-up": function() {
-			value_of(this.scenario.context.cleanup).should_be(false)
+			value_of(this.scenario.context.cleanup).should_be(true)
 		}
 	})
 }

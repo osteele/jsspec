@@ -25,9 +25,6 @@
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
 var JSSpec2 = {
-	alias: function(name, resource) {
-		
-	},
 	story: function(name) {
 		this.current_story = new JSSpec2.Story(name);
 		this.current_scenario = null;
@@ -52,10 +49,6 @@ var JSSpec2 = {
 	
 	value_of: function(value) {
 		return new JSSpec2.Expectation(value);
-	},
-	
-	run: function() {
-		this.current_scenario.run();
 	}
 };
 
