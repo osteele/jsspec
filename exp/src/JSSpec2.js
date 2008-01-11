@@ -25,9 +25,18 @@
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
 var JSSpec2 = {
+	alias: function(name, resource) {
+		
+	},
+	story: function(name) {
+		this.current_story = new JSSpec2.Story(name);
+		this.current_scenario = null;
+		
+		runner.addStory(this.current_story);
+	},
 	scenario: function(name) {
 		this.current_scenario = new JSSpec2.Scenario(name);
-		runner.addScenario(this.current_scenario);
+		this.current_story.addScenario(this.current_scenario);
 	},
 	given: function(givens) {
 		this.current_scenario.givens = givens;
@@ -51,6 +60,21 @@ var JSSpec2 = {
 };
 
 JSSpec2.RhinoRunner = function() {
+	this.stories = [];
+	
+	this.addStory = function(story) {
+		this.stories.push(story);
+	}
+	
+	this.run = function() {
+		for(var i = 0; i < this.stories.length; i++) {
+			this.stories[i].run();
+		}
+	}
+};
+
+JSSpec2.Story = function(name) {
+	this.name = name;
 	this.scenarios = [];
 	
 	this.addScenario = function(scenario) {
@@ -62,7 +86,7 @@ JSSpec2.RhinoRunner = function() {
 			this.scenarios[i].run();
 		}
 	}
-}
+};
 
 JSSpec2.Scenario = function(name) {
 	this.name = name;
@@ -72,19 +96,13 @@ JSSpec2.Scenario = function(name) {
 		
 		try {
 			// setup "givens"
-			for(var key in this.givens) {
-				this.givens[key][0].apply(this.context);
-			}
+			for(var key in this.givens) this.givens[key][0].apply(this.context);
 		
 			// execute "events"
-			for(var key in this.events) {
-				this.events[key].apply(this.context);
-			}
+			for(var key in this.events) this.events[key].apply(this.context);
 		
 			// check "outcomes"
-			for(var key in this.outcomes) {
-				this.outcomes[key].apply(this.context);
-			}
+			for(var key in this.outcomes) this.outcomes[key].apply(this.context);
 		} catch(e) {
 			// TODO
 		} finally {
@@ -102,7 +120,7 @@ JSSpec2.Expectation = function(actual_value) {
 	this.should_be = function(expected_value) {
 		if(expected_value != actual_value) {
 			print("[" + actual_value + "] should be [" + expected_value + "]");
-		} 
+		}
 	}
 }
 

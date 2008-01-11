@@ -3,6 +3,8 @@ load("/prj/jsspec/exp/src/JSSpec2.js")
 with(JSSpec2) {
 	__log__ = [];
 	
+	story("Core functions")
+	
 	scenario("Scenario execution")
 	given({
 		"plain scenario": [
@@ -54,10 +56,6 @@ with(JSSpec2) {
 	
 	
 	
-	scenario("Expectation failure")
-	
-	
-	
 	scenario("Cleanup")
 	given({
 		"scenario throwing an exception": [
@@ -91,7 +89,7 @@ with(JSSpec2) {
 	})
 	then({
 		"'givens' should be cleaned-up": function() {
-			value_of(this.scenario.context.cleanup).should_be(true)
+			value_of(this.scenario.context.cleanup).should_be(false)
 		}
 	})
 }
