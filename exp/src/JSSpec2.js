@@ -24,14 +24,74 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
-var jsspec = {};
-jsspec.isBrowser = !!this[alert];
-
-jsspec.echo = function(message) {
-	
-	if(jsspec.isBrowser) {
-		alert(message);
-	} else {
+var JSSpec2 = {
+	given: function(givens) {
+		// make new current scenario
+		this.current_scenario = new JSSpec2.Scenario();
+		runner.addScenario(this.current_scenario);
 		
+		// set givens into current scenario
+		this.current_scenario.givens = givens;
+	},
+	
+	when: function(events) {
+		// set events into current scenario
+		this.current_scenario.events = events;
+	},
+	
+	then: function(outcomes) {
+		// set expected outcomes into current scenario
+		this.current_scenario.outcomes = outcomes;
+	},
+	
+	value_of: function(value) {
+		return new JSSpec2.Expectation(value);
+	},
+	
+	run: function() {
+		this.current_scenario.run();
+	}
+};
+
+JSSpec2.RhinoRunner = function() {
+	this.scenarios = [];
+	
+	this.addScenario = function(scenario) {
+		this.scenarios.push(scenario);
+	}
+	
+	this.run = function() {
+		for(var i = 0; i < this.scenarios.length; i++) {
+			this.scenarios[i].run();
+		}
 	}
 }
+
+JSSpec2.Scenario = function() {
+	this.run = function() {
+		this.context = {};
+		
+		for(var key in this.givens) {
+			this.givens[key].apply(this.context);
+		}
+		
+		for(var key in this.events) {
+			this.events[key].apply(this.context);
+		}
+		
+		for(var key in this.outcomes) {
+			this.outcomes[key].apply(this.context);
+		}
+	}
+}
+
+JSSpec2.Expectation = function(actual_value) {
+	this.should_be = function(expected_value) {
+		if(expected_value != actual_value) {
+			print("[" + actual_value + "] should be [" + expected_value + "]");
+		} 
+	}
+}
+
+// Main
+var runner = new JSSpec2.RhinoRunner();
