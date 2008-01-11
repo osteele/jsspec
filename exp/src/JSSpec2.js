@@ -25,22 +25,19 @@
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
 var JSSpec2 = {
-	given: function(givens) {
-		// make new current scenario
-		this.current_scenario = new JSSpec2.Scenario();
+	scenario: function(name) {
+		this.current_scenario = new JSSpec2.Scenario(name);
 		runner.addScenario(this.current_scenario);
-		
-		// set givens into current scenario
+	},
+	given: function(givens) {
 		this.current_scenario.givens = givens;
 	},
 	
 	when: function(events) {
-		// set events into current scenario
 		this.current_scenario.events = events;
 	},
 	
 	then: function(outcomes) {
-		// set expected outcomes into current scenario
 		this.current_scenario.outcomes = outcomes;
 	},
 	
@@ -67,20 +64,36 @@ JSSpec2.RhinoRunner = function() {
 	}
 }
 
-JSSpec2.Scenario = function() {
+JSSpec2.Scenario = function(name) {
+	this.name = name;
+	
 	this.run = function() {
 		this.context = {};
 		
-		for(var key in this.givens) {
-			this.givens[key].apply(this.context);
-		}
+		try {
+			// setup "givens"
+			for(var key in this.givens) {
+				this.givens[key][0].apply(this.context);
+			}
 		
-		for(var key in this.events) {
-			this.events[key].apply(this.context);
-		}
+			// execute "events"
+			for(var key in this.events) {
+				this.events[key].apply(this.context);
+			}
 		
-		for(var key in this.outcomes) {
-			this.outcomes[key].apply(this.context);
+			// check "outcomes"
+			for(var key in this.outcomes) {
+				this.outcomes[key].apply(this.context);
+			}
+		} catch(e) {
+			// TODO
+		} finally {
+			// cleanup "givens"
+			for(var key in this.givens) {
+				try {
+					this.givens[key][1].apply(this.context);
+				} catch(ignored) {}
+			}
 		}
 	}
 }
