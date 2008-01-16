@@ -31,22 +31,31 @@ var JSSpec2 = {
 		this.current_story = new JSSpec2.Story(name);
 		this.current_scenario = null;
 		
-		runner.addStory(this.current_story);
+		runner.add_story(this.current_story);
+	},
+	as_a: function(role) {
+		this.current_story.set_role(role);
+	},
+	i_want: function(feature) {
+		this.current_story.set_feature(feature);
+	},
+	so_that: function(benefit) {
+		this.current_story.set_benefit(benefit);
 	},
 	scenario: function(name) {
 		this.current_scenario = new JSSpec2.Scenario(name);
-		this.current_story.addScenario(this.current_scenario);
+		this.current_story.add_scenario(this.current_scenario);
 	},
 	given: function(name, before, after) {
-		this.current_scenario.addGiven(name, before, after);
+		this.current_scenario.add_given(name, before, after);
 		this.last_method = "given";
 	},
 	when: function(name, event) {
-		this.current_scenario.addEvent(name, event);
+		this.current_scenario.add_event(name, event);
 		this.last_method = "when";
 	},
 	then: function(name, outcome) {
-		this.current_scenario.addOutcome(name, outcome);
+		this.current_scenario.add_outcome(name, outcome);
 		this.last_method = "then";
 	},
 	and: function() {
@@ -61,7 +70,7 @@ var JSSpec2 = {
 JSSpec2.RhinoRunner = function() {
 	this.stories = [];
 	
-	this.addStory = function(story) {
+	this.add_story = function(story) {
 		this.stories.push(story);
 	}
 	
@@ -74,9 +83,25 @@ JSSpec2.RhinoRunner = function() {
 
 JSSpec2.Story = function(name) {
 	this.name = name;
+	this.role = null;
+	this.feature = null;
+	this.benefit = null;
+	
 	this.scenarios = [];
 	
-	this.addScenario = function(scenario) {
+	this.set_role = function(role) {
+		this.role = role;
+	}
+	
+	this.set_feature = function(feature) {
+		this.feature = feature;
+	}
+	
+	this.set_benefit = function(benefit) {
+		this.benefit = benefit;
+	}
+	
+	this.add_scenario = function(scenario) {
 		this.scenarios.push(scenario);
 	}
 	
@@ -97,38 +122,38 @@ JSSpec2.Scenario = function(name) {
 	this.events = {};
 	this.outcomes = {};
 	
-	this.addGiven = function() {
+	this.add_given = function() {
 		if(arguments.length >= 2 && typeof arguments[1] == "function") {
-			this._addGivenFunction.apply(this, arguments);
+			this._add_given_function.apply(this, arguments);
 		} else {
-			this._addGivenObject.apply(this, arguments);
+			this._add_given_object.apply(this, arguments);
 		}
 	}
 	
-	this.addEvent = function(name, f) {
+	this.add_event = function(name, f) {
 		this.events[name] = f;
 	}
 	
-	this.addOutcome = function(name, f) {
+	this.add_outcome = function(name, f) {
 		if(arguments.length >= 2 && typeof arguments[1] == "function") {
-			this._addOutcomeFunction.apply(this, arguments);
+			this._add_outcome_function.apply(this, arguments);
 		} else {
-			this._addOutcomeObject.apply(this, arguments);
+			this._add_outcome_object.apply(this, arguments);
 		}
 	}
 	
-	this.isPassed = function() {
+	this.is_passed = function() {
 		return this.passed;
 	}
 	
-	this._addGivenFunction = function(name, before, after) {
+	this._add_given_function = function(name, before, after) {
 		this.givens[name] = { 
 			"before": before,
 			"after": after || JSSpec2.EMPTY_FUNCTION
 		}
 	}
 	
-	this._addGivenObject = function(name, o) {
+	this._add_given_object = function(name, o) {
 		this.givens[name] = { 
 			"before": function() {
 				for(var key in o) if(o.hasOwnProperty(key)) {
@@ -139,11 +164,11 @@ JSSpec2.Scenario = function(name) {
 		}
 	}
 	
-	this._addOutcomeFunction = function(name, f) {
+	this._add_outcome_function = function(name, f) {
 		this.outcomes[name] = f;
 	}
 	
-	this._addOutcomeObject = function(name, o) {
+	this._add_outcome_object = function(name, o) {
 		this.outcomes[name] = function() {
 			for(var key in o) if(o.hasOwnProperty(key)) {
 				JSSpec2.value_of(this[key]).should_be(o[key]);
@@ -190,15 +215,56 @@ JSSpec2.Scenario = function(name) {
 			for(var key in this.outcomes) {
 				print(' - ' + key);
 			}
+			print('Message ');
+			print(' - ' + this.exception);
+			
 			print(' ');
 		}
 	}
 }
 
 JSSpec2.Expectation = function(actual_value) {
+	this.mode = "first_pass";
+	this.passed = true;
+	
+	this.is_passed = function() {
+		return this.passed
+	}
+	this.set_mode = function(mode) {
+		this.mode = mode;
+	}
+	
+	/*
+	 * boolean tests
+	 */
+	this.should_be_true = function() {this.should_be(true);}
+	this.should_be_false = function() {this.should_be(false);}
 	this.should_be = function(expected_value) {
 		if(expected_value != actual_value) {
-			throw "[" + actual_value + "] should be [" + expected_value + "]";
+			this.passed = false;
+			if(this.mode == "test") {
+				// do nothing
+			} else {
+				throw "[" + actual_value + "] should be [" + expected_value + "]";
+			}
+		}
+	}
+	
+	/*
+	 * type tests
+	 */
+	this.should_be_function = function() {this.should_be_type("function");}
+	this.should_be_string = function() {this.should_be_type("string");}
+	this.should_be_type = function(expected_type) {
+		var actual_type = typeof actual_value;
+		
+		if(expected_type != actual_type) {
+			this.passed = false;
+			if(this.mode == "test") {
+				// do nothing
+			} else {
+				throw "[" + actual_value + "] should be a " + expected_type + " but [" + actual_type + "]";
+			}
 		}
 	}
 }
