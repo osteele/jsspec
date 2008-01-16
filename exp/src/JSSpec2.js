@@ -25,6 +25,8 @@
  * Foundation, Inc, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
 var JSSpec2 = {
+	last_method: null,
+	
 	story: function(name) {
 		this.current_story = new JSSpec2.Story(name);
 		this.current_scenario = null;
@@ -35,16 +37,20 @@ var JSSpec2 = {
 		this.current_scenario = new JSSpec2.Scenario(name);
 		this.current_story.addScenario(this.current_scenario);
 	},
-	given: function(givens) {
-		this.current_scenario.givens = givens;
+	given: function(name, before, after) {
+		this.current_scenario.addGiven(name, before, after);
+		this.last_method = "given";
 	},
-	
-	when: function(events) {
-		this.current_scenario.events = events;
+	when: function(name, event) {
+		this.current_scenario.addEvent(name, event);
+		this.last_method = "when";
 	},
-	
-	then: function(outcomes) {
-		this.current_scenario.outcomes = outcomes;
+	then: function(name, outcome) {
+		this.current_scenario.addOutcome(name, outcome);
+		this.last_method = "then";
+	},
+	and: function() {
+		this[this.last_method].apply(this, arguments);
 	},
 	
 	value_of: function(value) {
@@ -83,13 +89,74 @@ JSSpec2.Story = function(name) {
 
 JSSpec2.Scenario = function(name) {
 	this.name = name;
+	this.passed = true;
+	this.exception = null;
+	
+	this.context = {};
+	this.givens = {};
+	this.events = {};
+	this.outcomes = {};
+	
+	this.addGiven = function() {
+		if(arguments.length >= 2 && typeof arguments[1] == "function") {
+			this._addGivenFunction.apply(this, arguments);
+		} else {
+			this._addGivenObject.apply(this, arguments);
+		}
+	}
+	
+	this.addEvent = function(name, f) {
+		this.events[name] = f;
+	}
+	
+	this.addOutcome = function(name, f) {
+		if(arguments.length >= 2 && typeof arguments[1] == "function") {
+			this._addOutcomeFunction.apply(this, arguments);
+		} else {
+			this._addOutcomeObject.apply(this, arguments);
+		}
+	}
+	
+	this.isPassed = function() {
+		return this.passed;
+	}
+	
+	this._addGivenFunction = function(name, before, after) {
+		this.givens[name] = { 
+			"before": before,
+			"after": after || JSSpec2.EMPTY_FUNCTION
+		}
+	}
+	
+	this._addGivenObject = function(name, o) {
+		this.givens[name] = { 
+			"before": function() {
+				for(var key in o) if(o.hasOwnProperty(key)) {
+					this[key] = o[key];
+				}
+			},
+			"after": JSSpec2.EMPTY_FUNCTION
+		}
+	}
+	
+	this._addOutcomeFunction = function(name, f) {
+		this.outcomes[name] = f;
+	}
+	
+	this._addOutcomeObject = function(name, o) {
+		this.outcomes[name] = function() {
+			for(var key in o) if(o.hasOwnProperty(key)) {
+				JSSpec2.value_of(this[key]).should_be(o[key]);
+			}
+		}
+	}
 	
 	this.run = function() {
-		this.context = {};
-		
 		try {
 			// setup "givens"
-			for(var key in this.givens) this.givens[key][0].apply(this.context);
+			for(var key in this.givens) {
+				this.givens[key].before.apply(this.context);
+			}
 		
 			// execute "events"
 			for(var key in this.events) this.events[key].apply(this.context);
@@ -97,14 +164,33 @@ JSSpec2.Scenario = function(name) {
 			// check "outcomes"
 			for(var key in this.outcomes) this.outcomes[key].apply(this.context);
 		} catch(e) {
-			// TODO
+			this.passed = false;
+			this.exception = e;
 		} finally {
 			// cleanup "givens"
 			for(var key in this.givens) {
 				try {
-					this.givens[key][1].apply(this.context);
+					this.givens[key].after.apply(this.context);
 				} catch(ignored) {}
 			}
+		}
+		
+		if(!this.passed) {
+			print(this.name);
+			print('=====');
+			print('Given ');
+			for(var key in this.givens) {
+				print(' - ' + key);
+			}
+			print('When ');
+			for(var key in this.events) {
+				print(' - ' + key);
+			}
+			print('Then ');
+			for(var key in this.outcomes) {
+				print(' - ' + key);
+			}
+			print(' ');
 		}
 	}
 }
@@ -112,10 +198,12 @@ JSSpec2.Scenario = function(name) {
 JSSpec2.Expectation = function(actual_value) {
 	this.should_be = function(expected_value) {
 		if(expected_value != actual_value) {
-			print("[" + actual_value + "] should be [" + expected_value + "]");
+			throw "[" + actual_value + "] should be [" + expected_value + "]";
 		}
 	}
 }
+
+JSSpec2.EMPTY_FUNCTION = function() {}
 
 // Main
 var runner = new JSSpec2.RhinoRunner();
