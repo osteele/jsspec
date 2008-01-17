@@ -1,5 +1,3 @@
-load("/prj/jsspec/exp/src/JSSpec2.js")
-
 with(JSSpec2) {
 	story("Fullstack DSL for BDD")
 		as_a("spec writer")
@@ -21,6 +19,24 @@ with(JSSpec2) {
 				value_of(this.v.and).should_be_function()
 			})
 	
+		scenario("executing STEP")
+			given("defined 'given' has two arguments - number1 and number2", function() {
+				this.context = {}
+				this.given = new JSSpec2.Step(
+					"two numbers are {number1} and {number2}",
+					{number1: "12", number2: "34"},
+					this.context,
+					function(args) {this.args = args;}
+				)
+			})
+			when("'given' runs", function() {
+				this.given.run();
+			})
+			then("the arguments should be bound", function() {
+				value_of(this.context.args.number1).should_be("12");
+				value_of(this.context.args.number2).should_be("34");
+			})
+
 	story("Expectation APIs")
 		scenario("Boolean expectation")
 			given("boolean expectations are in test mode", function() {
@@ -46,22 +62,78 @@ with(JSSpec2) {
 			given("type expectations are in test mode", function() {
 				this.function_type = new JSSpec2.Expectation(function() {}); this.function_type.set_mode("test")
 				this.string_type = new JSSpec2.Expectation("Hello"); this.string_type.set_mode("test")
-				// TODO: Add more types such as boolean, number, array, date, regex, object, ...
+				this.boolean_type = new JSSpec2.Expectation(true); this.boolean_type.set_mode("test")
+				this.number_type = new JSSpec2.Expectation(1); this.number_type.set_mode("test")
+				this.array_type = new JSSpec2.Expectation([1,2,3]); this.array_type.set_mode("test")
+				this.date_type = new JSSpec2.Expectation(new Date()); this.date_type.set_mode("test")
+				this.regex_type = new JSSpec2.Expectation(/Hello/); this.regex_type.set_mode("test")
+				this.object_type = new JSSpec2.Expectation({a:1}); this.object_type.set_mode("test")
 			})
 			when("runner performs various tests", function() {
 				this.function_type.should_be_function()
 				this.string_type.should_be_string()
+				this.boolean_type.should_be_boolean()
+				this.number_type.should_be_number()
+				this.array_type.should_be_array()
+				this.date_type.should_be_date()
+				this.regex_type.should_be_regexp()
+				this.object_type.should_be_object()
 			})
 			then("the tests should be performed correctly", function() {
 				value_of(this.function_type.is_passed()).should_be_true()
 				value_of(this.string_type.is_passed()).should_be_true()
+				value_of(this.boolean_type.is_passed()).should_be_true()
+				value_of(this.number_type.is_passed()).should_be_true()
+				value_of(this.array_type.is_passed()).should_be_true()
+				value_of(this.date_type.is_passed()).should_be_true()
+				value_of(this.regex_type.is_passed()).should_be_true()
+				value_of(this.object_type.is_passed()).should_be_true()
 			})
 
+		scenario("")
 	
 	
 	// -----------------------------------------------------------------------
 	
 	story("Temporary specs for bootstrap")
+		scenario("plain text loader")
+			given("plain text loader", {loader: new JSSpec2.PlainTextLoader()})
+			when("loader interpretes story title", function() {
+				this.loader.interprete(
+					"Story: transfer to cash account\n" +
+					"  As a savings account holder\n" +
+					"  I want to transfer money from my savings account\n" +
+					"  So that I can get cash easily from an ATM\n" +
+					"  \n" +
+					"  Scenario: savings account is in credit\n" +
+					"    Given my savings account balance is 100\n" /* +
+					"    And my cash account balance is 10\n" +
+					"    When I transfer 20\n" +
+					"    Then my savings account balance should be 80\n" +
+					"    And my cash account balance should be 30\n" +
+					"    \n" +
+					"  Scenario: savings account is overdrawn\n" +
+					"    Given my savings account balance is -20\n" +
+					"    And my cash account balance is 10\n" +
+					"    When I transfer 20\n" +
+					"    Then my savings account balance should be -20\n" +
+					"    And my cash account balance should be 10\n"/**/
+				);
+				
+				this.story = this.loader.get_story();
+			})
+			then("story instance should be created", function() {
+				var story = this.story;
+				value_of(story.get_title()).should_be("transfer to cash account");
+				value_of(story.get_role()).should_be("savings account holder");
+				value_of(story.get_feature()).should_be("to transfer money from my savings account");
+				value_of(story.get_benefit()).should_be("I can get cash easily from an ATM");
+				value_of(story.get_scenarios().length).should_be(1);
+				
+				var scenario = story.get_scenarios()[0];
+			})
+			
+		
 		scenario("polymorphic 'Scenario.add_given' - object")
 			given("empty scenario", {scenario: new JSSpec2.Scenario("scenario 1")})
 			when("'addGiven' is called with an object", function() {

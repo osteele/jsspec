@@ -81,8 +81,40 @@ JSSpec2.RhinoRunner = function() {
 	}
 };
 
-JSSpec2.Story = function(name) {
-	this.name = name;
+JSSpec2.PlainTextLoader = function() {
+	this.currnet_story = null;
+	
+	this.interprete = function(message) {
+		var lines = message.split("\n");
+		for(var i = 0; i < lines.length; i++) {
+			this.interprete_line(JSSpec2.UTILS.strip(lines[i]));
+		}
+	}
+	
+	this.get_story = function() {
+		return this.current_story;
+	}
+	
+	this.interprete_line = function(line) {
+		if(line.indexOf("Story:") == 0) {
+			this.current_story = new JSSpec2.Story(line.match(/^Story\:\s*(.*)/i)[1]);
+		} else if(line.indexOf("As a") == 0) {
+			this.current_story.set_role(line.match(/^As a\s*(.*)/i)[1]);
+		} else if(line.indexOf("I want") == 0) {
+			this.current_story.set_feature(line.match(/^I want\s*(.*)/i)[1]);
+		} else if(line.indexOf("So that") == 0) {
+			this.current_story.set_benefit(line.match(/^So that\s*(.*)/i)[1]);
+		} else if(line.indexOf("Scenario:") == 0) {
+			this.current_scenario = new JSSpec2.Scenario();
+			this.current_story.add_scenario(this.current_scenario);
+		} else {
+			// just ignore
+		}
+	}
+};
+
+JSSpec2.Story = function(title) {
+	this.title = title;
 	this.role = null;
 	this.feature = null;
 	this.benefit = null;
@@ -104,6 +136,13 @@ JSSpec2.Story = function(name) {
 	this.add_scenario = function(scenario) {
 		this.scenarios.push(scenario);
 	}
+	
+	this.get_title = function() {return this.title;}
+	this.get_role = function() {return this.role;}
+	this.get_feature = function() {return this.feature;}
+	this.get_benefit = function() {return this.benefit;}
+	this.get_scenarios = function() {return this.scenarios;}
+	
 	
 	this.run = function() {
 		for(var i = 0; i < this.scenarios.length; i++) {
@@ -223,6 +262,17 @@ JSSpec2.Scenario = function(name) {
 	}
 }
 
+JSSpec2.Step = function(message, args, context, handler) {
+	this.message = message;
+	this.args = args;
+	this.context = context;
+	this.handler = handler;
+	
+	this.run = function() {
+		this.handler.apply(this.context, [this.args]);
+	}
+}
+
 JSSpec2.Expectation = function(actual_value) {
 	this.mode = "first_pass";
 	this.passed = true;
@@ -255,8 +305,15 @@ JSSpec2.Expectation = function(actual_value) {
 	 */
 	this.should_be_function = function() {this.should_be_type("function");}
 	this.should_be_string = function() {this.should_be_type("string");}
+	this.should_be_boolean = function() {this.should_be_type("boolean");}
+	this.should_be_number = function() {this.should_be_type("number");}
+	this.should_be_array = function() {this.should_be_type("array");}
+	this.should_be_date = function() {this.should_be_type("date");}
+	this.should_be_regexp = function() {this.should_be_type("regexp");}
+	this.should_be_object = function() {this.should_be_type("object");}
+	
 	this.should_be_type = function(expected_type) {
-		var actual_type = typeof actual_value;
+		var actual_type = this._typeof(actual_value);
 		
 		if(expected_type != actual_type) {
 			this.passed = false;
@@ -267,9 +324,33 @@ JSSpec2.Expectation = function(actual_value) {
 			}
 		}
 	}
+	this._typeof = function(o) {
+		var ctor = o.constructor;
+		
+		if(ctor == Array) {
+			return "array";
+		} else if(ctor == Date) {
+			return "date";
+		} else if(ctor == RegExp) {
+			return "regexp";
+		} else {
+			return typeof o;
+		}
+	}
 }
 
+
+
 JSSpec2.EMPTY_FUNCTION = function() {}
+
+
+
+JSSpec2.UTILS = {};
+JSSpec2.UTILS.strip = function(str) {
+	return str.replace(/^\s+/, '').replace(/\s+$/, '');
+}
+
+
 
 // Main
 var runner = new JSSpec2.RhinoRunner();
