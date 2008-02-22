@@ -226,7 +226,7 @@ JSSpec.Spec.prototype.getTotalErrors = function() {
 
 JSSpec.Spec.prototype.filterEntriesByEmbeddedExpressions = function(entries) {
 	var isTrue;
-	for(name in entries) {
+	for(name in entries) if(entries.hasOwnProperty(name) {
 		var m = name.match(/\[\[(.+)\]\]/);
 		if(m && m[1]) {
 			eval("isTrue = (" + m[1] + ")");
@@ -241,7 +241,7 @@ JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 	this.afterEach = JSSpec.EMPTY_FUNCTION;
 	this.afterAll = JSSpec.EMPTY_FUNCTION;
 	
-	for(name in entries) {
+	for(name in entries) if(entries.hasOwnProperty(name) {
 		if(name == 'before' || name == 'before each' || name == 'before_each') {
 			this.beforeEach = entries[name];
 		} else if(name == 'before all' || name == 'before_all') {
@@ -267,7 +267,7 @@ JSSpec.Spec.prototype.extractOutSpecialEntries = function(entries) {
 
 JSSpec.Spec.prototype.makeExamplesFromEntries = function(entries) {
 	var examples = [];
-	for(name in entries) {
+	for(name in entries) if(entries.hasOwnProperty(name) {
 		examples.push(new JSSpec.Example(name, entries[name], this.beforeEach, this.afterEach));
 	}
 	return examples;
