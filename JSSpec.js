@@ -1,3 +1,4 @@
+
 /**
  * JSSpec
  *
@@ -478,7 +479,7 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 			var sb = [];
 			for(var i = 0; i < specs.length; i++) {
 				var spec = specs[i];
-				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + JSSpec.util.escapeTags(specs[i].context) + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3></li>');
+				sb.push('<li id="spec_' + specs[i].id + '_list"><h3><a href="#spec_' + specs[i].id + '">' + JSSpec.util.escapeTags(specs[i].context) + '</a> [<a href="?rerun=' + encodeURIComponent(specs[i].context) + '">rerun</a>]</h3> </li>');
 			}
 			return sb.join("");
 		}(),
@@ -501,9 +502,10 @@ JSSpec.Logger.prototype.onRunnerStart = function() {
 				sb.push('		<ul id="spec_' + specs[i].id + '_examples" class="examples">');
 				for(var j = 0; j < spec.examples.length; j++) {
 					var example = spec.examples[j];
-					sb.push('			<li id="example_' + example.id + '">')
-					sb.push('				<h4>' + JSSpec.util.escapeTags(example.name) + '</h4>')
-					sb.push('			</li>')
+					sb.push('			<li id="example_' + example.id + '">');
+					sb.push('				<h4>' + JSSpec.util.escapeTags(example.name) + '</h4>');
+					sb.push('				<pre class="examples-code"><code>'+JSSpec.util.escapeTags(example.target.toString())+'</code></pre>');
+					sb.push('			</li>');
 				}
 				sb.push('		</ul>');
 				sb.push('	</li>');
@@ -580,7 +582,7 @@ JSSpec.Logger.prototype.onSpecEnd = function(spec) {
 	if(JSSpec.options.autocollapse && !spec.hasException()) examples.style.display = "none";
 	
 	if(spec.exception) {
-		heading.appendChild(document.createTextNode(" - " + spec.exception.message));
+		spec_log.appendChild(document.createTextNode(" - " + spec.exception.message));
 	}
 };
 
