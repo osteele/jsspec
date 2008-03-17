@@ -1322,7 +1322,7 @@ JSSpec.util = {
 		var queryIndex = url.indexOf('?');
 		if(queryIndex == -1) return options;
 		
-		var query = url.substring(queryIndex + 1);
+		var query = url.substring(queryIndex + 1).split('#')[0];
 		var pairs = query.split('&');
 		for(var i = 0; i < pairs.length; i++) {
 			var tokens = pairs[i].split('=');
