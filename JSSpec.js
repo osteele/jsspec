@@ -1,4 +1,3 @@
-
 /**
  * JSSpec
  *
@@ -36,10 +35,28 @@ var JSSpec = {
 	EMPTY_FUNCTION: function() {},
 	
 	Browser: {
-		Trident: navigator.appName == "Microsoft Internet Explorer",
+		// By Rendering Engines
+		Trident: navigator.appName === "Microsoft Internet Explorer",
 		Webkit: navigator.userAgent.indexOf('AppleWebKit/') > -1,
-		Gecko: navigator.userAgent.indexOf('Gecko') > -1 && navigator.userAgent.indexOf('KHTML') == -1,
-		Presto: navigator.appName == "Opera"
+		Gecko: navigator.userAgent.indexOf('Gecko') > -1 && navigator.userAgent.indexOf('KHTML') === -1,
+		KHTML: navigator.userAgent.indexOf('KHTML') !== -1,
+		Presto: navigator.appName === "Opera",
+		
+		// By Platforms
+		Mac: navigator.userAgent.indexOf("Macintosh") !== -1,
+		Ubuntu: navigator.userAgent.indexOf('Ubuntu') !== -1,
+		Win: navigator.userAgent.indexOf('Windows') !== -1,
+		
+		// By Browsers
+		IE: navigator.appName === "Microsoft Internet Explorer",
+		IE6: navigator.userAgent.indexOf('MSIE 6') !== -1,
+		IE7: navigator.userAgent.indexOf('MSIE 7') !== -1,
+		IE8: navigator.userAgent.indexOf('MSIE 8') !== -1,
+		
+		FF: navigator.userAgent.indexOf('Firefox') !== -1,
+		FF2: navigator.userAgent.indexOf('Firefox/2') !== -1,
+		FF3: navigator.userAgent.indexOf('Firefox/3') !== -1,
+		Safari: navigator.userAgent.indexOf('Safari') !== -1
 	}
 };
 
@@ -1167,8 +1184,22 @@ JSSpec.DSL.forString = {
 };
 
 
-
-JSSpec.DSL.describe = function(context, entries) {
+JSSpec.DSL.describe = function(context, entries, base) {
+	if(base) {
+		for(var i = 0; i < JSSpec.specs.length; i++) {
+			if(JSSpec.specs[i].context === base) {
+				base = JSSpec.specs[i];
+				break;
+			}
+		}
+		
+		for(var i = 0; i < base.examples.length; i++) {
+			var example = base.examples[i];
+			
+			if(!entries[example.name]) entries[example.name] = example.target;
+		}
+	}
+	
 	JSSpec.specs.push(new JSSpec.Spec(context, entries));
 };
 

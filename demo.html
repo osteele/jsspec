@@ -7,6 +7,27 @@
 <script type="text/javascript" src="diff_match_patch.js"></script>
 <script type="text/javascript" src="JSSpec.js"></script>
 <script type="text/javascript">// <![CDATA[
+describe('Foo (base)', {
+	'before': function() {
+		target = {sayFoo: function() {return "foo";}};
+	},
+	'should say "foo"': function() {
+		value_of(target.sayFoo()).should_be("foo");
+	}
+})
+
+describe('Boo (derived)', {
+	'before': function() {
+		target = {
+			sayFoo: function() {return "foo";},
+			sayBar: function() {return "bar";}
+		};
+	},
+	'should also say "bar"': function() {
+		value_of(target.sayBar()).should_be("bar");
+	}
+}, 'Foo (base)')
+
 describe('Plus operator (just for example)', {
 	'should concatenate two strings': function() {
 		value_of("Hello " + "World").should_be("Hello World");
